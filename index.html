@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!-- docx library: builds real .docx files in the browser -->
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <style>
 :root{
   --bg:#e9efe9; --surface:#f4f8f3; --surface-2:#eef3ed;
@@ -27,7 +29,6 @@ body{
   min-height:100vh; -webkit-font-smoothing:antialiased;
 }
 .wrap{max-width:1240px;margin:0 auto;}
-
 header{text-align:center;margin-bottom:30px;}
 .logo{width:92px;height:92px;object-fit:contain;background:var(--surface);
   border-radius:50%;box-shadow:var(--clay);padding:12px;margin:0 auto 16px;display:block;}
@@ -35,19 +36,16 @@ header{text-align:center;margin-bottom:30px;}
   color:var(--cyan);text-transform:uppercase;font-size:.8rem;margin-bottom:4px;}
 h1{font-family:'Fredoka',sans-serif;font-weight:700;font-size:clamp(1.5rem,4vw,2.4rem);line-height:1.08;}
 h1 .hl{color:var(--pink);}
-
 .toolbar{display:flex;justify-content:center;gap:12px;margin:18px 0 4px;flex-wrap:wrap;}
 .btn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.98rem;color:var(--ink);
   background:var(--surface);box-shadow:var(--clay-sm);border:none;border-radius:var(--r-sm);
   padding:11px 20px;cursor:pointer;transition:transform .15s ease;}
 .btn:hover{transform:translateY(-2px);}
 .btn.cyan{background:var(--cyan);color:#fff;}
-
 .daysection{margin-top:34px;}
 .dayhead{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.35rem;
   margin-bottom:4px;display:flex;align-items:center;gap:12px;}
 .dayhead .date{font-size:.95rem;color:var(--muted);font-weight:700;font-family:'Nunito';}
-
 .catcard{background:var(--surface);border-radius:var(--r);box-shadow:var(--clay);
   padding:20px 18px;margin-top:18px;}
 .catcard .cattop{display:flex;justify-content:space-between;align-items:center;
@@ -56,7 +54,6 @@ h1 .hl{color:var(--pink);}
 .catcard .cattitle .sub{font-family:'Nunito';font-weight:700;color:var(--muted);font-size:.85rem;}
 .fillpill{font-weight:800;font-size:.8rem;padding:5px 12px;border-radius:14px;
   background:var(--surface-2);box-shadow:var(--clay-sm);color:var(--muted);}
-
 .table-scroll{overflow-x:auto;border-radius:var(--r-sm);}
 table{border-collapse:separate;border-spacing:0 7px;width:100%;min-width:560px;}
 th{font-family:'Nunito';font-weight:800;font-size:.74rem;text-transform:uppercase;
@@ -65,7 +62,6 @@ td{background:var(--surface-2);padding:7px 9px;vertical-align:middle;}
 td:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm);font-family:'Fredoka';
   font-weight:600;text-align:center;width:46px;color:var(--lime-deep);}
 td:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0;}
-
 td input{font-family:'Nunito';font-weight:700;font-size:.9rem;color:var(--ink);
   border:2px solid transparent;border-radius:9px;background:var(--surface);
   box-shadow:var(--clay-in);padding:8px 10px;width:100%;outline:none;transition:border-color .2s;}
@@ -73,34 +69,48 @@ td input.dupr{width:78px;text-align:center;}
 td input.saved{border-color:var(--lime);}
 td input.failed{border-color:var(--pink);}
 td .avg{font-family:'Fredoka';font-weight:600;color:var(--ink);text-align:center;display:block;}
-
 select.pay{font-family:'Nunito';font-weight:800;font-size:.82rem;border:none;cursor:pointer;
   border-radius:9px;padding:8px 8px;box-shadow:var(--clay-sm);outline:none;}
 select.pay[data-v="Paid"]{background:var(--lime-deep);color:#fff;}
 select.pay[data-v="Pending"]{background:#ffe1ef;color:var(--pink);}
-
 a.sliplink{font-weight:800;font-size:.82rem;color:var(--cyan);text-decoration:none;
   padding:7px 12px;border-radius:9px;box-shadow:var(--clay-sm);background:var(--surface);
   display:inline-block;white-space:nowrap;}
 a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:default;}
-
 .del{border:none;cursor:pointer;background:#ffe1ef;color:var(--pink);font-weight:800;
   font-size:.8rem;border-radius:9px;padding:8px 11px;box-shadow:var(--clay-sm);white-space:nowrap;}
 .del:hover{background:var(--pink);color:#fff;}
-
 .emptyrow{color:var(--muted);font-weight:700;padding:14px;text-align:center;
   background:var(--surface-2);border-radius:var(--r-sm);}
-
 .drawbtn{font-family:'Fredoka';font-weight:600;font-size:1rem;color:#fff;border:none;
   cursor:pointer;border-radius:var(--r-sm);padding:12px 22px;margin-top:14px;
   background:linear-gradient(135deg,var(--cyan),var(--lime-deep));box-shadow:var(--clay-sm);}
 .drawbtn:hover{transform:translateY(-2px);}
-
 .loading{text-align:center;color:var(--muted);font-weight:700;padding:50px;}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
   background:var(--ink);color:#fff;font-weight:700;padding:12px 22px;border-radius:14px;
-  box-shadow:var(--clay);opacity:0;pointer-events:none;transition:opacity .3s;z-index:60;}
+  box-shadow:var(--clay);opacity:0;pointer-events:none;transition:opacity .3s;z-index:80;}
 .toast.show{opacity:1;}
+
+/* ---- Draw preview modal ---- */
+.modal{position:fixed;inset:0;background:rgba(28,42,31,.55);backdrop-filter:blur(5px);
+  display:none;z-index:70;padding:22px;overflow:auto;}
+.modal.show{display:block;}
+.sheet{max-width:900px;margin:0 auto;background:var(--surface);border-radius:var(--r);
+  box-shadow:var(--clay);padding:26px 24px 32px;}
+.sheet h2{font-family:'Fredoka';font-weight:700;font-size:1.5rem;}
+.sheet .meta{color:var(--muted);font-weight:700;margin:4px 0 18px;}
+.sheet h3{font-family:'Fredoka';font-weight:600;font-size:1.12rem;margin:22px 0 10px;
+  padding-bottom:6px;border-bottom:2px solid var(--surface-2);}
+.dtable{width:100%;border-collapse:collapse;margin-bottom:6px;font-size:.9rem;}
+.dtable th{background:var(--surface-2);color:var(--ink);text-align:left;padding:8px 10px;
+  font-size:.72rem;border:1px solid #d7e1d4;}
+.dtable td{padding:8px 10px;border:1px solid #d7e1d4;font-weight:600;}
+.dtable td.c{text-align:center;}
+.notebox{background:var(--surface-2);box-shadow:var(--clay-in);border-radius:var(--r-sm);
+  padding:12px 14px;font-size:.85rem;font-weight:600;color:var(--muted);margin-top:8px;}
+.modalbar{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;flex-wrap:wrap;}
+.modalbar .btn.green{background:linear-gradient(135deg,var(--lime),var(--lime-deep));color:#fff;}
 </style>
 </head>
 <body>
@@ -113,8 +123,11 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
       <button class="btn cyan" onclick="loadDashboard()">Reload data</button>
     </div>
   </header>
-
   <div id="content"><div class="loading">Loading registrations…</div></div>
+</div>
+
+<div class="modal" id="drawModal">
+  <div class="sheet" id="drawSheet"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -126,14 +139,21 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzeZaUXvfqsA1oVqwwnSxdn_JJrYnCJQ5-3vA0-TCJSjMZUP2tRMEl-PawqlxZ5opGbXg/exec";
 
 let DASH = null;
+let LAST_DRAW = null;
 
-/* Day grouping in the order the PDF lays them out */
 const DAY_GROUPS = [
   { day:'tuesday',   title:'Tuesday Schedule',   cats:['newbee_doubles','mixed_doubles'] },
   { day:'wednesday', title:'Wednesday Schedule', cats:['stinger_doubles'] },
   { day:'thursday',  title:'Thursday Schedule',  cats:['newbee_singles','stinger_singles'] },
 ];
 
+/* start time (in minutes from midnight) for each category's draw */
+const DRAW_START = {
+  newbee_doubles: 19*60, mixed_doubles: 21*60+30, stinger_doubles: 20*60,
+  newbee_singles: 19*60, stinger_singles: 20*60+30,
+};
+
+/* =================== load + render dashboard =================== */
 async function loadDashboard(){
   document.getElementById('content').innerHTML = '<div class="loading">Loading registrations…</div>';
   try{
@@ -147,150 +167,279 @@ async function loadDashboard(){
       '<div class="loading">Couldn\'t load data. Check the backend URL and try Reload.</div>';
   }
 }
-
 function render(){
-  const root = document.getElementById('content');
-  root.innerHTML = '';
+  const root = document.getElementById('content'); root.innerHTML='';
   DAY_GROUPS.forEach(group=>{
-    const sec = document.createElement('div');
-    sec.className = 'daysection';
-    sec.innerHTML = `<div class="dayhead">${group.title}
-      <span class="date">${DASH.dates[group.day]}</span></div>`;
+    const sec=document.createElement('div'); sec.className='daysection';
+    sec.innerHTML=`<div class="dayhead">${group.title}<span class="date">${DASH.dates[group.day]}</span></div>`;
     group.cats.forEach(key=> sec.appendChild(buildCatCard(key)) );
     root.appendChild(sec);
   });
 }
-
 function buildCatCard(key){
-  const c = DASH.categories[key];
-  const card = document.createElement('div');
-  card.className = 'catcard';
-  card.innerHTML = `
+  const c=DASH.categories[key];
+  const card=document.createElement('div'); card.className='catcard';
+  card.innerHTML=`
     <div class="cattop">
       <div class="cattitle">${c.label} <span class="sub">· ${c.time}</span></div>
       <div class="fillpill">${c.filled} / ${c.limit} filled</div>
     </div>
     <div class="table-scroll">${buildTable(key,c)}</div>
-    <button class="drawbtn" onclick="generateDraw('${key}')">Generate Draw</button>
-  `;
+    <button class="drawbtn" onclick="generateDraw('${key}')">Generate Draw</button>`;
   return card;
 }
-
 function buildTable(key,c){
   if(c.rows.length===0) return '<div class="emptyrow">No registrations yet.</div>';
   let head, body='';
-
   if(c.type==='doubles'){
-    head = `<tr><th>#</th><th>Player 1</th><th>Player 2</th><th>P1 DUPR</th><th>P2 DUPR</th>
+    head=`<tr><th>#</th><th>Player 1</th><th>Player 2</th><th>P1 DUPR</th><th>P2 DUPR</th>
       <th>Avg</th><th>Slip</th><th>Pay P1</th><th>Pay P2</th><th></th></tr>`;
-    c.rows.forEach(r=>{
-      body += `<tr>
-        <td>${r.num}</td>
-        <td>${txt(key,r.index,'player1',r.player1,180)}</td>
-        <td>${txt(key,r.index,'player2',r.player2,180)}</td>
-        <td>${num(key,r.index,'p1dupr',r.p1dupr)}</td>
-        <td>${num(key,r.index,'p2dupr',r.p2dupr)}</td>
-        <td><span class="avg" id="avg-${key}-${r.index}">${r.avg||'—'}</span></td>
-        <td>${slip(r.slip)}</td>
-        <td>${pay(key,r.index,'payconf1',r.payconf1)}</td>
-        <td>${pay(key,r.index,'payconf2',r.payconf2)}</td>
-        <td>${del(key,r.index)}</td></tr>`;
-    });
+    c.rows.forEach(r=>{ body+=`<tr><td>${r.num}</td>
+      <td>${txt(key,r.index,'player1',r.player1,180)}</td>
+      <td>${txt(key,r.index,'player2',r.player2,180)}</td>
+      <td>${num(key,r.index,'p1dupr',r.p1dupr)}</td>
+      <td>${num(key,r.index,'p2dupr',r.p2dupr)}</td>
+      <td><span class="avg" id="avg-${key}-${r.index}">${r.avg||'—'}</span></td>
+      <td>${slip(r.slip)}</td>
+      <td>${pay(key,r.index,'payconf1',r.payconf1)}</td>
+      <td>${pay(key,r.index,'payconf2',r.payconf2)}</td>
+      <td>${del(key,r.index)}</td></tr>`; });
   }else if(c.type==='mixed'){
-    head = `<tr><th>#</th><th>Player 1</th><th>Player 2</th><th>Slip</th>
-      <th>Pay P1</th><th>Pay P2</th><th></th></tr>`;
-    c.rows.forEach(r=>{
-      body += `<tr>
-        <td>${r.num}</td>
-        <td>${txt(key,r.index,'player1',r.player1,190)}</td>
-        <td>${txt(key,r.index,'player2',r.player2,190)}</td>
-        <td>${slip(r.slip)}</td>
-        <td>${pay(key,r.index,'payconf1',r.payconf1)}</td>
-        <td>${pay(key,r.index,'payconf2',r.payconf2)}</td>
-        <td>${del(key,r.index)}</td></tr>`;
-    });
+    head=`<tr><th>#</th><th>Player 1</th><th>Player 2</th><th>Slip</th><th>Pay P1</th><th>Pay P2</th><th></th></tr>`;
+    c.rows.forEach(r=>{ body+=`<tr><td>${r.num}</td>
+      <td>${txt(key,r.index,'player1',r.player1,190)}</td>
+      <td>${txt(key,r.index,'player2',r.player2,190)}</td>
+      <td>${slip(r.slip)}</td>
+      <td>${pay(key,r.index,'payconf1',r.payconf1)}</td>
+      <td>${pay(key,r.index,'payconf2',r.payconf2)}</td>
+      <td>${del(key,r.index)}</td></tr>`; });
   }else{
-    head = `<tr><th>#</th><th>Player 1</th><th>DUPR</th><th>Slip</th><th>Payment</th><th></th></tr>`;
-    c.rows.forEach(r=>{
-      body += `<tr>
-        <td>${r.num}</td>
-        <td>${txt(key,r.index,'player1',r.player1,200)}</td>
-        <td>${num(key,r.index,'dupr',r.dupr)}</td>
-        <td>${slip(r.slip)}</td>
-        <td>${pay(key,r.index,'payconf',r.payconf)}</td>
-        <td>${del(key,r.index)}</td></tr>`;
-    });
+    head=`<tr><th>#</th><th>Player 1</th><th>DUPR</th><th>Slip</th><th>Payment</th><th></th></tr>`;
+    c.rows.forEach(r=>{ body+=`<tr><td>${r.num}</td>
+      <td>${txt(key,r.index,'player1',r.player1,200)}</td>
+      <td>${num(key,r.index,'dupr',r.dupr)}</td>
+      <td>${slip(r.slip)}</td>
+      <td>${pay(key,r.index,'payconf',r.payconf)}</td>
+      <td>${del(key,r.index)}</td></tr>`; });
   }
   return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
 }
-
-/* ---- cell builders ---- */
 function esc(v){ return String(v==null?'':v).replace(/"/g,'&quot;'); }
-function txt(key,i,field,val,w){
-  return `<input type="text" style="min-width:${w}px" value="${esc(val)}"
-    onchange="saveCell(this,'${key}',${i},'${field}')">`;
-}
-function num(key,i,field,val){
-  return `<input type="number" step="0.001" class="dupr" value="${esc(val)}"
-    onchange="saveCell(this,'${key}',${i},'${field}')">`;
-}
-function pay(key,i,field,val){
-  const v = (val==='Paid')?'Paid':'Pending';
-  return `<select class="pay" data-v="${v}"
-    onchange="this.setAttribute('data-v',this.value);saveCell(this,'${key}',${i},'${field}')">
-    <option ${v==='Pending'?'selected':''}>Pending</option>
-    <option ${v==='Paid'?'selected':''}>Paid</option></select>`;
-}
-function slip(url){
-  if(!url) return '<span class="sliplink none">none</span>';
-  return `<a class="sliplink" href="${esc(url)}" target="_blank" rel="noopener">View slip</a>`;
-}
-function del(key,i){
-  return `<button class="del" onclick="deleteRow('${key}',${i})">Delete</button>`;
-}
+function txt(key,i,field,val,w){ return `<input type="text" style="min-width:${w}px" value="${esc(val)}" onchange="saveCell(this,'${key}',${i},'${field}')">`; }
+function num(key,i,field,val){ return `<input type="number" step="0.001" class="dupr" value="${esc(val)}" onchange="saveCell(this,'${key}',${i},'${field}')">`; }
+function pay(key,i,field,val){ const v=(val==='Paid')?'Paid':'Pending';
+  return `<select class="pay" data-v="${v}" onchange="this.setAttribute('data-v',this.value);saveCell(this,'${key}',${i},'${field}')">
+    <option ${v==='Pending'?'selected':''}>Pending</option><option ${v==='Paid'?'selected':''}>Paid</option></select>`; }
+function slip(url){ if(!url) return '<span class="sliplink none">none</span>';
+  return `<a class="sliplink" href="${esc(url)}" target="_blank" rel="noopener">View slip</a>`; }
+function del(key,i){ return `<button class="del" onclick="deleteRow('${key}',${i})">Delete</button>`; }
 
-/* ---- save an edit ---- */
+/* =================== edits + deletes =================== */
 async function saveCell(el,key,index,field){
-  const value = el.value;
   try{
-    const res = await fetch(BACKEND_URL,{ method:'POST',
-      body: JSON.stringify({ action:'update', week:DASH.week, category:key, index:index, field:field, value:value }) });
-    const out = await res.json();
+    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'update',week:DASH.week,category:key,index:index,field:field,value:el.value})});
+    const out=await res.json();
     if(out.ok){
       if(el.tagName==='INPUT'){ el.classList.add('saved'); setTimeout(()=>el.classList.remove('saved'),1000); }
-      // refresh the on-screen average if the server recalculated it
-      if(out.avg!==null && out.avg!==undefined){
-        const a=document.getElementById(`avg-${key}-${index}`); if(a) a.textContent=out.avg||'—';
-      }
+      if(out.avg!==null && out.avg!==undefined){ const a=document.getElementById(`avg-${key}-${index}`); if(a) a.textContent=out.avg||'—'; }
       toast('Saved');
-    }else{ fail(el); toast(out.error||'Save failed'); }
-  }catch(e){ fail(el); toast('Network error'); }
+    }else{ failCell(el); toast(out.error||'Save failed'); }
+  }catch(e){ failCell(el); toast('Network error'); }
 }
-function fail(el){ if(el.tagName==='INPUT'){ el.classList.add('failed'); setTimeout(()=>el.classList.remove('failed'),1500);} }
-
-/* ---- delete a row ---- */
+function failCell(el){ if(el.tagName==='INPUT'){ el.classList.add('failed'); setTimeout(()=>el.classList.remove('failed'),1500);} }
 async function deleteRow(key,index){
   if(!confirm('Remove this entry? This frees the spot on the registration site.')) return;
   try{
-    const res = await fetch(BACKEND_URL,{ method:'POST',
-      body: JSON.stringify({ action:'delete', week:DASH.week, category:key, index:index }) });
-    const out = await res.json();
-    if(out.ok){ toast('Entry removed'); loadDashboard(); }
-    else toast(out.error||'Delete failed');
+    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'delete',week:DASH.week,category:key,index:index})});
+    const out=await res.json();
+    if(out.ok){ toast('Entry removed'); loadDashboard(); } else toast(out.error||'Delete failed');
   }catch(e){ toast('Network error'); }
 }
 
-/* ---- draw (built in Phase 4) ---- */
-function generateDraw(key){
-  toast('Draw engine is wired up in the next step (Phase 4).');
+/* ================================================================
+ *  DRAW ENGINE
+ * ================================================================ */
+function cleanName(s){ return String(s||'').replace(/\s*-\s*[MF]\s*$/i,'').trim(); }
+function minToTime(m){
+  let h=Math.floor(m/60)%24, mm=m%60; const ap=h>=12?'PM':'AM';
+  let h12=h%12; if(h12===0) h12=12;
+  return h12+':'+(mm<10?'0'+mm:mm)+' '+ap;
+}
+/* Circle-method round robin: each team plays at most once per round, so
+   flattening the rounds can never put a team in 3 consecutive matches. */
+function groupSchedule(teams){
+  const ts=teams.slice();
+  if(ts.length%2===1) ts.push(null);   // add a bye for odd team counts
+  const n=ts.length, arr=ts.slice(), ordered=[];
+  for(let r=0;r<n-1;r++){
+    for(let i=0;i<n/2;i++){
+      const a=arr[i], b=arr[n-1-i];
+      if(a&&b) ordered.push({a,b});
+    }
+    arr.splice(1,0,arr.pop());          // rotate, keeping the first fixed
+  }
+  return ordered;
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function buildDrawData(key){
+  const c=DASH.categories[key];
+  const rows=c.rows;
+  if(rows.length<2) return {error:'Need at least 2 entries to generate a draw.'};
+
+  // build team objects
+  let teams=rows.map(r=>{
+    if(c.type==='singles') return {name:cleanName(r.player1), rating:parseFloat(r.dupr)||0};
+    const nm=cleanName(r.player1)+' / '+cleanName(r.player2);
+    if(c.type==='mixed') return {name:nm, rating:null};
+    let avg=parseFloat(r.avg); if(isNaN(avg)){ const a=parseFloat(r.p1dupr)||0,b=parseFloat(r.p2dupr)||0; avg=(a&&b)?(a+b)/2:0; }
+    return {name:nm, rating:avg};
+  });
+
+  // seed / rank
+  if(c.type==='mixed'){ teams=shuffle(teams); teams.forEach((t,i)=>t.rank=i+1); }
+  else { teams.sort((x,y)=>y.rating-x.rating); teams.forEach((t,i)=>t.rank=i+1); }
+
+  const numGroups = (c.type==='mixed') ? 2 : 3;
+  const groups=[]; for(let g=0; g<numGroups; g++) groups.push({label:'Group '+(g+1), teams:[]});
+  teams.forEach(t=> groups[(t.rank-1)%numGroups].teams.push(t) );
+  groups.forEach(g=> g.teams.sort((a,b)=>a.rank-b.rank) );
+
+  // court assignment
+  let courtN, courtB;
+  if(c.type==='mixed'){ courtN=[groups[0]]; courtB=[groups[1]]; }
+  else { courtN=[groups[1]]; courtB=[groups[0],groups[2]]; }   // N=G2 ; B=G1 then G3
+
+  const start=DRAW_START[key];
+  const groupStage=[];
+  const sched=(court,list)=>{ let t=start; list.forEach(g=>{ groupSchedule(g.teams).forEach(m=>{
+      groupStage.push({court,time:minToTime(t),group:g.label,a:m.a.name,b:m.b.name}); t+=15; }); }); return t; };
+  const endN=sched('Court N',courtN), endB=sched('Court B',courtB);
+  let ko=Math.max(endN,endB);
+
+  // knockout templates
+  const knockout=[]; let note='';
+  if(c.type==='mixed'){
+    knockout.push({stage:'Semi 1', court:'Court N', time:minToTime(ko),    a:'Rank 1 — Group 1', b:'Rank 2 — Group 2'});
+    knockout.push({stage:'Semi 2', court:'Court B', time:minToTime(ko),    a:'Rank 1 — Group 2', b:'Rank 2 — Group 1'});
+    knockout.push({stage:'3rd Place', court:'Court B', time:minToTime(ko+15), a:'Loser of Semi 1', b:'Loser of Semi 2'});
+    knockout.push({stage:'Final', court:'Court N', time:minToTime(ko+30),  a:'Winner of Semi 1', b:'Winner of Semi 2'});
+  }else{
+    knockout.push({stage:'Quarterfinal 1', court:'Court N', time:minToTime(ko),    a:'Rank 1 — Group 1', b:'Qualifier 8'});
+    knockout.push({stage:'Quarterfinal 2', court:'Court B', time:minToTime(ko),    a:'Rank 1 — Group 2', b:'Qualifier 7'});
+    knockout.push({stage:'Quarterfinal 3', court:'Court N', time:minToTime(ko+15), a:'Rank 1 — Group 3', b:'Rank 2 — Group 1'});
+    knockout.push({stage:'Quarterfinal 4', court:'Court B', time:minToTime(ko+15), a:'Rank 2 — Group 2', b:'Rank 2 — Group 3'});
+    knockout.push({stage:'Semi 1', court:'Court N', time:minToTime(ko+30), a:'Winner of QF1', b:'Winner of QF4'});
+    knockout.push({stage:'Semi 2', court:'Court B', time:minToTime(ko+30), a:'Winner of QF2', b:'Winner of QF3'});
+    knockout.push({stage:'Final',  court:'Court N', time:minToTime(ko+45), a:'Winner of Semi 1', b:'Winner of Semi 2'});
+    note='Qualifier 7 = best 3rd-placed team across the groups. Qualifier 8 = second-best 3rd-placed team. '+
+         'Ranked by games won; if tied, the team that conceded fewer points ranks higher.';
+  }
+
+  return { error:null, key, label:c.label, type:c.type, time:c.time, day:c.day,
+    date:DASH.dates[c.day], week:DASH.week, seeds:teams, groups, groupStage, knockout, note };
 }
 
-/* ---- toast ---- */
-let toastT;
-function toast(msg){
-  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
-  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800);
+/* ---------- preview ---------- */
+function generateDraw(key){
+  const d=buildDrawData(key);
+  if(d.error){ toast(d.error); return; }
+  LAST_DRAW=d;
+  renderPreview(d);
 }
+function renderPreview(d){
+  let html=`<h2>${d.label} — Draw</h2>
+    <div class="meta">${cap(d.day)} ${d.date} · ${d.time} · Week ${d.week}</div>`;
+
+  // seeding
+  html+=`<h3>Seeding</h3><table class="dtable"><tr><th>Seed</th><th>${d.type==='singles'?'Player':'Pair'}</th><th>${d.type==='mixed'?'Method':'Rating'}</th></tr>`;
+  d.seeds.forEach(t=>{ html+=`<tr><td class="c">${t.rank}</td><td>${t.name}</td><td class="c">${d.type==='mixed'?'Random':(t.rating?Number(t.rating).toFixed(3):'—')}</td></tr>`; });
+  html+=`</table>`;
+
+  // groups
+  html+=`<h3>Groups</h3><table class="dtable"><tr>${d.groups.map(g=>`<th>${g.label}</th>`).join('')}</tr>`;
+  const maxLen=Math.max(...d.groups.map(g=>g.teams.length));
+  for(let i=0;i<maxLen;i++){ html+='<tr>'+d.groups.map(g=>`<td>${g.teams[i]?('#'+g.teams[i].rank+' '+g.teams[i].name):''}</td>`).join('')+'</tr>'; }
+  html+=`</table>`;
+
+  // group stage schedule
+  html+=`<h3>Group Stage — Round Robin</h3><table class="dtable"><tr><th>Time</th><th>Court</th><th>Group</th><th>Match</th></tr>`;
+  d.groupStage.forEach(m=>{ html+=`<tr><td class="c">${m.time}</td><td class="c">${m.court}</td><td class="c">${m.group}</td><td>${m.a} &nbsp;vs&nbsp; ${m.b}</td></tr>`; });
+  html+=`</table>`;
+
+  // knockout
+  html+=`<h3>Knockout Bracket</h3><table class="dtable"><tr><th>Stage</th><th>Court</th><th>Time</th><th>Match</th></tr>`;
+  d.knockout.forEach(m=>{ html+=`<tr><td>${m.stage}</td><td class="c">${m.court}</td><td class="c">${m.time}</td><td>${m.a} &nbsp;vs&nbsp; ${m.b}</td></tr>`; });
+  html+=`</table>`;
+  if(d.note) html+=`<div class="notebox">${d.note}</div>`;
+  html+=`<div class="notebox">Times are auto-generated at 15-minute intervals from the category start. Knockout times assume on-time group-stage completion — adjust on the night as needed.</div>`;
+
+  html+=`<div class="modalbar">
+      <button class="btn" onclick="closeDraw()">Close</button>
+      <button class="btn green" onclick="downloadDraw()">Download .docx</button>
+    </div>`;
+  document.getElementById('drawSheet').innerHTML=html;
+  document.getElementById('drawModal').classList.add('show');
+}
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function closeDraw(){ document.getElementById('drawModal').classList.remove('show'); }
+
+/* ---------- .docx download ---------- */
+function downloadDraw(){
+  const d=LAST_DRAW; if(!d) return;
+  if(typeof docx==='undefined'){ toast('Draw library still loading — try again in a moment.'); return; }
+  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, HeadingLevel } = docx;
+
+  const cell=(t,bold,fill)=> new TableCell({
+    shading: fill?{fill:fill}:undefined,
+    children:[new Paragraph({children:[new TextRun({text:String(t),bold:!!bold})]})] });
+  const mkTable=(headers,rowsArr)=> new Table({
+    width:{size:100,type:WidthType.PERCENTAGE},
+    rows:[ new TableRow({children:headers.map(h=>cell(h,true,'EEF3ED'))}),
+           ...rowsArr.map(r=> new TableRow({children:r.map(x=>cell(x,false))})) ] });
+  const H=(t,lvl)=> new Paragraph({text:t, heading:lvl, spacing:{before:240,after:120}});
+  const P=(t)=> new Paragraph({children:[new TextRun({text:t})], spacing:{after:120}});
+
+  const kids=[];
+  kids.push(new Paragraph({children:[new TextRun({text:d.label+' — Draw', bold:true, size:32})]}));
+  kids.push(P(cap(d.day)+' '+d.date+'  ·  '+d.time+'  ·  Week '+d.week));
+
+  kids.push(H('Seeding', HeadingLevel.HEADING_2));
+  kids.push(mkTable(['Seed', d.type==='singles'?'Player':'Pair', d.type==='mixed'?'Method':'Rating'],
+    d.seeds.map(t=>[String(t.rank), t.name, d.type==='mixed'?'Random':(t.rating?Number(t.rating).toFixed(3):'—')])));
+
+  kids.push(H('Groups', HeadingLevel.HEADING_2));
+  const maxLen=Math.max(...d.groups.map(g=>g.teams.length));
+  const grows=[]; for(let i=0;i<maxLen;i++) grows.push(d.groups.map(g=> g.teams[i]?('#'+g.teams[i].rank+' '+g.teams[i].name):''));
+  kids.push(mkTable(d.groups.map(g=>g.label), grows));
+
+  kids.push(H('Group Stage — Round Robin', HeadingLevel.HEADING_2));
+  kids.push(mkTable(['Time','Court','Group','Match'],
+    d.groupStage.map(m=>[m.time,m.court,m.group,m.a+'  vs  '+m.b])));
+
+  kids.push(H('Knockout Bracket', HeadingLevel.HEADING_2));
+  kids.push(mkTable(['Stage','Court','Time','Match'],
+    d.knockout.map(m=>[m.stage,m.court,m.time,m.a+'  vs  '+m.b])));
+
+  if(d.note){ kids.push(H('Notes', HeadingLevel.HEADING_2)); kids.push(P(d.note)); }
+  kids.push(P('Times are auto-generated at 15-minute intervals from the category start. Knockout times assume on-time group-stage completion.'));
+
+  const doc=new Document({sections:[{children:kids}]});
+  Packer.toBlob(doc).then(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=(d.label.replace(/[^a-z0-9]+/gi,'_'))+'_Week'+d.week+'_Draw.docx';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast('Draw downloaded');
+  }).catch(()=> toast('Could not build the .docx — try again.'));
+}
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1900); }
 
 loadDashboard();
 </script>
