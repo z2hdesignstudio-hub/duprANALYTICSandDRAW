@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DUPR Night Analytics · PickleBee by 71</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9efe9; --surface:#f4f8f3; --surface-2:#eef3ed;
+  --lime:#a8d600; --lime-deep:#8bb800; --pink:#ff2e9a; --cyan:#12cccc;
+  --ink:#1c2a1f; --muted:#6b7d6e;
+  --clay:7px 7px 18px rgba(60,80,55,.18), -7px -7px 16px rgba(255,255,255,.9);
+  --clay-in:inset 4px 4px 9px rgba(60,80,55,.16), inset -4px -4px 9px rgba(255,255,255,.85);
+  --clay-sm:4px 4px 11px rgba(60,80,55,.16), -4px -4px 10px rgba(255,255,255,.85);
+  --r:24px; --r-sm:13px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Nunito',sans-serif; color:var(--ink); padding:24px 16px 70px;
+  background:
+    radial-gradient(circle at 10% 6%, rgba(168,214,0,.10), transparent 40%),
+    radial-gradient(circle at 92% 96%, rgba(18,204,204,.10), transparent 42%),
+    var(--bg);
+  min-height:100vh; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px;margin:0 auto;}
+
+header{text-align:center;margin-bottom:30px;}
+.logo{width:92px;height:92px;object-fit:contain;background:var(--surface);
+  border-radius:50%;box-shadow:var(--clay);padding:12px;margin:0 auto 16px;display:block;}
+.eyebrow{font-family:'Fredoka',sans-serif;font-weight:600;letter-spacing:.5px;
+  color:var(--cyan);text-transform:uppercase;font-size:.8rem;margin-bottom:4px;}
+h1{font-family:'Fredoka',sans-serif;font-weight:700;font-size:clamp(1.5rem,4vw,2.4rem);line-height:1.08;}
+h1 .hl{color:var(--pink);}
+
+.toolbar{display:flex;justify-content:center;gap:12px;margin:18px 0 4px;flex-wrap:wrap;}
+.btn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.98rem;color:var(--ink);
+  background:var(--surface);box-shadow:var(--clay-sm);border:none;border-radius:var(--r-sm);
+  padding:11px 20px;cursor:pointer;transition:transform .15s ease;}
+.btn:hover{transform:translateY(-2px);}
+.btn.cyan{background:var(--cyan);color:#fff;}
+
+.daysection{margin-top:34px;}
+.dayhead{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.35rem;
+  margin-bottom:4px;display:flex;align-items:center;gap:12px;}
+.dayhead .date{font-size:.95rem;color:var(--muted);font-weight:700;font-family:'Nunito';}
+
+.catcard{background:var(--surface);border-radius:var(--r);box-shadow:var(--clay);
+  padding:20px 18px;margin-top:18px;}
+.catcard .cattop{display:flex;justify-content:space-between;align-items:center;
+  gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.catcard .cattitle{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.12rem;}
+.catcard .cattitle .sub{font-family:'Nunito';font-weight:700;color:var(--muted);font-size:.85rem;}
+.fillpill{font-weight:800;font-size:.8rem;padding:5px 12px;border-radius:14px;
+  background:var(--surface-2);box-shadow:var(--clay-sm);color:var(--muted);}
+
+.table-scroll{overflow-x:auto;border-radius:var(--r-sm);}
+table{border-collapse:separate;border-spacing:0 7px;width:100%;min-width:560px;}
+th{font-family:'Nunito';font-weight:800;font-size:.74rem;text-transform:uppercase;
+  letter-spacing:.4px;color:var(--muted);text-align:left;padding:4px 9px;white-space:nowrap;}
+td{background:var(--surface-2);padding:7px 9px;vertical-align:middle;}
+td:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm);font-family:'Fredoka';
+  font-weight:600;text-align:center;width:46px;color:var(--lime-deep);}
+td:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0;}
+
+td input{font-family:'Nunito';font-weight:700;font-size:.9rem;color:var(--ink);
+  border:2px solid transparent;border-radius:9px;background:var(--surface);
+  box-shadow:var(--clay-in);padding:8px 10px;width:100%;outline:none;transition:border-color .2s;}
+td input.dupr{width:78px;text-align:center;}
+td input.saved{border-color:var(--lime);}
+td input.failed{border-color:var(--pink);}
+td .avg{font-family:'Fredoka';font-weight:600;color:var(--ink);text-align:center;display:block;}
+
+select.pay{font-family:'Nunito';font-weight:800;font-size:.82rem;border:none;cursor:pointer;
+  border-radius:9px;padding:8px 8px;box-shadow:var(--clay-sm);outline:none;}
+select.pay[data-v="Paid"]{background:var(--lime-deep);color:#fff;}
+select.pay[data-v="Pending"]{background:#ffe1ef;color:var(--pink);}
+
+a.sliplink{font-weight:800;font-size:.82rem;color:var(--cyan);text-decoration:none;
+  padding:7px 12px;border-radius:9px;box-shadow:var(--clay-sm);background:var(--surface);
+  display:inline-block;white-space:nowrap;}
+a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:default;}
+
+.del{border:none;cursor:pointer;background:#ffe1ef;color:var(--pink);font-weight:800;
+  font-size:.8rem;border-radius:9px;padding:8px 11px;box-shadow:var(--clay-sm);white-space:nowrap;}
+.del:hover{background:var(--pink);color:#fff;}
+
+.emptyrow{color:var(--muted);font-weight:700;padding:14px;text-align:center;
+  background:var(--surface-2);border-radius:var(--r-sm);}
+
+.drawbtn{font-family:'Fredoka';font-weight:600;font-size:1rem;color:#fff;border:none;
+  cursor:pointer;border-radius:var(--r-sm);padding:12px 22px;margin-top:14px;
+  background:linear-gradient(135deg,var(--cyan),var(--lime-deep));box-shadow:var(--clay-sm);}
+.drawbtn:hover{transform:translateY(-2px);}
+
+.loading{text-align:center;color:var(--muted);font-weight:700;padding:50px;}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:#fff;font-weight:700;padding:12px 22px;border-radius:14px;
+  box-shadow:var(--clay);opacity:0;pointer-events:none;transition:opacity .3s;z-index:60;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="./picklebee-logo.png" class="logo" alt="PickleBee by 71" onerror="this.style.display='none'">
+    <div class="eyebrow">DUPR Night Analytics</div>
+    <h1 id="welcome">Insights from PickleBee by 71</h1>
+    <div class="toolbar">
+      <button class="btn cyan" onclick="loadDashboard()">Reload data</button>
+    </div>
+  </header>
+
+  <div id="content"><div class="loading">Loading registrations…</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   PASTE THE SAME APPS SCRIPT /exec URL YOU USED FOR WEBSITE 1
+   ============================================================ */
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzeZaUXvfqsA1oVqwwnSxdn_JJrYnCJQ5-3vA0-TCJSjMZUP2tRMEl-PawqlxZ5opGbXg/exec";
+
+let DASH = null;
+
+/* Day grouping in the order the PDF lays them out */
+const DAY_GROUPS = [
+  { day:'tuesday',   title:'Tuesday Schedule',   cats:['newbee_doubles','mixed_doubles'] },
+  { day:'wednesday', title:'Wednesday Schedule', cats:['stinger_doubles'] },
+  { day:'thursday',  title:'Thursday Schedule',  cats:['newbee_singles','stinger_singles'] },
+];
+
+async function loadDashboard(){
+  document.getElementById('content').innerHTML = '<div class="loading">Loading registrations…</div>';
+  try{
+    const res = await fetch(BACKEND_URL + '?action=dashboard');
+    DASH = await res.json();
+    document.getElementById('welcome').innerHTML =
+      `Insights from the <span class="hl">Week ${DASH.week}</span> of DUPR at PickleBee by 71`;
+    render();
+  }catch(e){
+    document.getElementById('content').innerHTML =
+      '<div class="loading">Couldn\'t load data. Check the backend URL and try Reload.</div>';
+  }
+}
+
+function render(){
+  const root = document.getElementById('content');
+  root.innerHTML = '';
+  DAY_GROUPS.forEach(group=>{
+    const sec = document.createElement('div');
+    sec.className = 'daysection';
+    sec.innerHTML = `<div class="dayhead">${group.title}
+      <span class="date">${DASH.dates[group.day]}</span></div>`;
+    group.cats.forEach(key=> sec.appendChild(buildCatCard(key)) );
+    root.appendChild(sec);
+  });
+}
+
+function buildCatCard(key){
+  const c = DASH.categories[key];
+  const card = document.createElement('div');
+  card.className = 'catcard';
+  card.innerHTML = `
+    <div class="cattop">
+      <div class="cattitle">${c.label} <span class="sub">· ${c.time}</span></div>
+      <div class="fillpill">${c.filled} / ${c.limit} filled</div>
+    </div>
+    <div class="table-scroll">${buildTable(key,c)}</div>
+    <button class="drawbtn" onclick="generateDraw('${key}')">Generate Draw</button>
+  `;
+  return card;
+}
+
+function buildTable(key,c){
+  if(c.rows.length===0) return '<div class="emptyrow">No registrations yet.</div>';
+  let head, body='';
+
+  if(c.type==='doubles'){
+    head = `<tr><th>#</th><th>Player 1</th><th>Player 2</th><th>P1 DUPR</th><th>P2 DUPR</th>
+      <th>Avg</th><th>Slip</th><th>Pay P1</th><th>Pay P2</th><th></th></tr>`;
+    c.rows.forEach(r=>{
+      body += `<tr>
+        <td>${r.num}</td>
+        <td>${txt(key,r.index,'player1',r.player1,180)}</td>
+        <td>${txt(key,r.index,'player2',r.player2,180)}</td>
+        <td>${num(key,r.index,'p1dupr',r.p1dupr)}</td>
+        <td>${num(key,r.index,'p2dupr',r.p2dupr)}</td>
+        <td><span class="avg" id="avg-${key}-${r.index}">${r.avg||'—'}</span></td>
+        <td>${slip(r.slip)}</td>
+        <td>${pay(key,r.index,'payconf1',r.payconf1)}</td>
+        <td>${pay(key,r.index,'payconf2',r.payconf2)}</td>
+        <td>${del(key,r.index)}</td></tr>`;
+    });
+  }else if(c.type==='mixed'){
+    head = `<tr><th>#</th><th>Player 1</th><th>Player 2</th><th>Slip</th>
+      <th>Pay P1</th><th>Pay P2</th><th></th></tr>`;
+    c.rows.forEach(r=>{
+      body += `<tr>
+        <td>${r.num}</td>
+        <td>${txt(key,r.index,'player1',r.player1,190)}</td>
+        <td>${txt(key,r.index,'player2',r.player2,190)}</td>
+        <td>${slip(r.slip)}</td>
+        <td>${pay(key,r.index,'payconf1',r.payconf1)}</td>
+        <td>${pay(key,r.index,'payconf2',r.payconf2)}</td>
+        <td>${del(key,r.index)}</td></tr>`;
+    });
+  }else{
+    head = `<tr><th>#</th><th>Player 1</th><th>DUPR</th><th>Slip</th><th>Payment</th><th></th></tr>`;
+    c.rows.forEach(r=>{
+      body += `<tr>
+        <td>${r.num}</td>
+        <td>${txt(key,r.index,'player1',r.player1,200)}</td>
+        <td>${num(key,r.index,'dupr',r.dupr)}</td>
+        <td>${slip(r.slip)}</td>
+        <td>${pay(key,r.index,'payconf',r.payconf)}</td>
+        <td>${del(key,r.index)}</td></tr>`;
+    });
+  }
+  return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+
+/* ---- cell builders ---- */
+function esc(v){ return String(v==null?'':v).replace(/"/g,'&quot;'); }
+function txt(key,i,field,val,w){
+  return `<input type="text" style="min-width:${w}px" value="${esc(val)}"
+    onchange="saveCell(this,'${key}',${i},'${field}')">`;
+}
+function num(key,i,field,val){
+  return `<input type="number" step="0.001" class="dupr" value="${esc(val)}"
+    onchange="saveCell(this,'${key}',${i},'${field}')">`;
+}
+function pay(key,i,field,val){
+  const v = (val==='Paid')?'Paid':'Pending';
+  return `<select class="pay" data-v="${v}"
+    onchange="this.setAttribute('data-v',this.value);saveCell(this,'${key}',${i},'${field}')">
+    <option ${v==='Pending'?'selected':''}>Pending</option>
+    <option ${v==='Paid'?'selected':''}>Paid</option></select>`;
+}
+function slip(url){
+  if(!url) return '<span class="sliplink none">none</span>';
+  return `<a class="sliplink" href="${esc(url)}" target="_blank" rel="noopener">View slip</a>`;
+}
+function del(key,i){
+  return `<button class="del" onclick="deleteRow('${key}',${i})">Delete</button>`;
+}
+
+/* ---- save an edit ---- */
+async function saveCell(el,key,index,field){
+  const value = el.value;
+  try{
+    const res = await fetch(BACKEND_URL,{ method:'POST',
+      body: JSON.stringify({ action:'update', week:DASH.week, category:key, index:index, field:field, value:value }) });
+    const out = await res.json();
+    if(out.ok){
+      if(el.tagName==='INPUT'){ el.classList.add('saved'); setTimeout(()=>el.classList.remove('saved'),1000); }
+      // refresh the on-screen average if the server recalculated it
+      if(out.avg!==null && out.avg!==undefined){
+        const a=document.getElementById(`avg-${key}-${index}`); if(a) a.textContent=out.avg||'—';
+      }
+      toast('Saved');
+    }else{ fail(el); toast(out.error||'Save failed'); }
+  }catch(e){ fail(el); toast('Network error'); }
+}
+function fail(el){ if(el.tagName==='INPUT'){ el.classList.add('failed'); setTimeout(()=>el.classList.remove('failed'),1500);} }
+
+/* ---- delete a row ---- */
+async function deleteRow(key,index){
+  if(!confirm('Remove this entry? This frees the spot on the registration site.')) return;
+  try{
+    const res = await fetch(BACKEND_URL,{ method:'POST',
+      body: JSON.stringify({ action:'delete', week:DASH.week, category:key, index:index }) });
+    const out = await res.json();
+    if(out.ok){ toast('Entry removed'); loadDashboard(); }
+    else toast(out.error||'Delete failed');
+  }catch(e){ toast('Network error'); }
+}
+
+/* ---- draw (built in Phase 4) ---- */
+function generateDraw(key){
+  toast('Draw engine is wired up in the next step (Phase 4).');
+}
+
+/* ---- toast ---- */
+let toastT;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+loadDashboard();
+</script>
+</body>
+</html>
