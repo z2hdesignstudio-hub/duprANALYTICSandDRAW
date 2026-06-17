@@ -83,9 +83,14 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 .emptyrow{color:var(--muted);font-weight:700;padding:14px;text-align:center;
   background:var(--surface-2);border-radius:var(--r-sm);}
 .drawbtn{font-family:'Fredoka';font-weight:600;font-size:1rem;color:#fff;border:none;
-  cursor:pointer;border-radius:var(--r-sm);padding:12px 22px;margin-top:14px;
+  cursor:pointer;border-radius:var(--r-sm);padding:12px 22px;
   background:linear-gradient(135deg,var(--cyan),var(--lime-deep));box-shadow:var(--clay-sm);}
 .drawbtn:hover{transform:translateY(-2px);}
+.cardbtns{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;}
+.addbtn{font-family:'Fredoka';font-weight:600;font-size:1rem;color:var(--ink);border:none;
+  cursor:pointer;border-radius:var(--r-sm);padding:12px 22px;
+  background:var(--surface-2);box-shadow:var(--clay-sm);}
+.addbtn:hover{transform:translateY(-2px);background:#e3edda;}
 .loading{text-align:center;color:var(--muted);font-weight:700;padding:50px;}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
   background:var(--ink);color:#fff;font-weight:700;padding:12px 22px;border-radius:14px;
@@ -178,6 +183,7 @@ function render(){
 }
 function buildCatCard(key){
   const c=DASH.categories[key];
+  const addLabel = c.type==='singles' ? 'Add a BEE' : 'Add a Pair of BEEs';
   const card=document.createElement('div'); card.className='catcard';
   card.innerHTML=`
     <div class="cattop">
@@ -185,7 +191,10 @@ function buildCatCard(key){
       <div class="fillpill">${c.filled} / ${c.limit} filled</div>
     </div>
     <div class="table-scroll">${buildTable(key,c)}</div>
-    <button class="drawbtn" onclick="generateDraw('${key}')">Generate Draw</button>`;
+    <div class="cardbtns">
+      <button class="addbtn" onclick="addSlot('${key}')">+ ${addLabel}</button>
+      <button class="drawbtn" onclick="generateDraw('${key}')">Generate Draw</button>
+    </div>`;
   return card;
 }
 function buildTable(key,c){
@@ -255,6 +264,13 @@ async function deleteRow(key,index){
     if(out.ok){ toast('Entry removed'); loadDashboard(); } else toast(out.error||'Delete failed');
   }catch(e){ toast('Network error'); }
 }
+async function addSlot(key){
+  try{
+    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'addSlot',week:DASH.week,category:key})});
+    const out=await res.json();
+    if(out.ok){ toast('Slot added'); loadDashboard(); } else toast(out.error||'Could not add slot');
+  }catch(e){ toast('Network error'); }
+}
 
 /* ================================================================
  *  DRAW ENGINE
@@ -284,7 +300,7 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 
 function buildDrawData(key){
   const c=DASH.categories[key];
-  const rows=c.rows;
+  const rows=c.rows.filter(r=> cleanName(r.player1)!=='');   // ignore empty slots
   if(rows.length<2) return {error:'Need at least 2 entries to generate a draw.'};
 
   // build team objects
