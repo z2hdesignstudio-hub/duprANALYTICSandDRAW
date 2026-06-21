@@ -80,6 +80,11 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 .del{border:none;cursor:pointer;background:#ffe1ef;color:var(--pink);font-weight:800;
   font-size:.8rem;border-radius:9px;padding:8px 11px;box-shadow:var(--clay-sm);white-space:nowrap;}
 .del:hover{background:var(--pink);color:#fff;}
+.xdel{border:none;cursor:pointer;background:var(--ink);color:#fff;font-weight:800;
+  font-size:.8rem;border-radius:9px;padding:8px 10px;box-shadow:var(--clay-sm);
+  white-space:nowrap;margin-left:6px;}
+.xdel:hover{background:#000;}
+.rowacts{display:flex;flex-wrap:nowrap;}
 .emptyrow{color:var(--muted);font-weight:700;padding:14px;text-align:center;
   background:var(--surface-2);border-radius:var(--r-sm);}
 .drawbtn{font-family:'Fredoka';font-weight:600;font-size:1rem;color:#fff;border:none;
@@ -114,6 +119,11 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 .dtable td.c{text-align:center;}
 .notebox{background:var(--surface-2);box-shadow:var(--clay-in);border-radius:var(--r-sm);
   padding:12px 14px;font-size:.85rem;font-weight:600;color:var(--muted);margin-top:8px;}
+.otpbox{background:linear-gradient(135deg,var(--cyan),var(--lime-deep));color:#fff;
+  border-radius:var(--r-sm);box-shadow:var(--clay-sm);padding:16px 18px;margin:6px 0 16px;
+  font-weight:700;font-size:1.05rem;text-align:center;}
+.otpbox b{font-family:'Fredoka';font-size:2rem;letter-spacing:.15em;display:inline-block;margin-top:2px;}
+.otpbox span{display:block;font-weight:600;font-size:.8rem;opacity:.92;margin-top:6px;}
 .modalbar{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;flex-wrap:wrap;}
 .modalbar .btn.green{background:linear-gradient(135deg,var(--lime),var(--lime-deep));color:#fff;}
 </style>
@@ -153,10 +163,6 @@ const DAY_GROUPS = [
 ];
 
 /* start time (in minutes from midnight) for each category's draw */
-const DRAW_START = {
-  newbee_doubles: 19*60, mixed_doubles: 21*60+30, stinger_doubles: 20*60,
-  newbee_singles: 19*60, stinger_singles: 20*60+30,
-};
 
 /* =================== load + render dashboard =================== */
 async function loadDashboard(){
@@ -212,7 +218,7 @@ function buildTable(key,c){
       <td>${slip(r.slip)}</td>
       <td>${pay(key,r.index,'payconf1',r.payconf1)}</td>
       <td>${pay(key,r.index,'payconf2',r.payconf2)}</td>
-      <td>${del(key,r.index)}</td></tr>`; });
+      <td><div class="rowacts">${del(key,r.index)}${xdel(key,r.index,!!r.player1)}</div></td></tr>`; });
   }else if(c.type==='mixed'){
     head=`<tr><th>#</th><th>Player 1</th><th>Player 2</th><th>Slip</th><th>Pay P1</th><th>Pay P2</th><th></th></tr>`;
     c.rows.forEach(r=>{ body+=`<tr><td>${r.num}</td>
@@ -221,7 +227,7 @@ function buildTable(key,c){
       <td>${slip(r.slip)}</td>
       <td>${pay(key,r.index,'payconf1',r.payconf1)}</td>
       <td>${pay(key,r.index,'payconf2',r.payconf2)}</td>
-      <td>${del(key,r.index)}</td></tr>`; });
+      <td><div class="rowacts">${del(key,r.index)}${xdel(key,r.index,!!r.player1)}</div></td></tr>`; });
   }else{
     head=`<tr><th>#</th><th>Player 1</th><th>DUPR</th><th>Slip</th><th>Payment</th><th></th></tr>`;
     c.rows.forEach(r=>{ body+=`<tr><td>${r.num}</td>
@@ -229,7 +235,7 @@ function buildTable(key,c){
       <td>${num(key,r.index,'dupr',r.dupr)}</td>
       <td>${slip(r.slip)}</td>
       <td>${pay(key,r.index,'payconf',r.payconf)}</td>
-      <td>${del(key,r.index)}</td></tr>`; });
+      <td><div class="rowacts">${del(key,r.index)}${xdel(key,r.index,!!r.player1)}</div></td></tr>`; });
   }
   return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
 }
@@ -242,6 +248,7 @@ function pay(key,i,field,val){ const v=(val==='Paid')?'Paid':'Pending';
 function slip(url){ if(!url) return '<span class="sliplink none">none</span>';
   return `<a class="sliplink" href="${esc(url)}" target="_blank" rel="noopener">View slip</a>`; }
 function del(key,i){ return `<button class="del" onclick="deleteRow('${key}',${i})">Delete</button>`; }
+function xdel(key,i,hasData){ return `<button class="xdel" onclick="removeSlot('${key}',${i},${hasData})" title="Remove this slot entirely">X</button>`; }
 
 /* Pressing Enter jumps to the next editable text/number cell (and saves the
    current one, since leaving the field fires its change handler). */
@@ -283,124 +290,78 @@ async function addSlot(key){
     if(out.ok){ toast('Slot added'); loadDashboard(); } else toast(out.error||'Could not add slot');
   }catch(e){ toast('Network error'); }
 }
+async function removeSlot(key,index,hasData){
+  const msg = hasData
+    ? 'This slot still has a registration in it. Removing it will DELETE that entry AND remove the slot itself — capacity drops by one. This cannot be undone. Continue?'
+    : 'Remove this empty slot? Category capacity will drop by one.';
+  if(!confirm(msg)) return;
+  try{
+    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'removeSlot',week:DASH.week,category:key,index:index})});
+    const out=await res.json();
+    if(out.ok){ toast('Slot removed'); loadDashboard(); } else toast(out.error||'Could not remove slot');
+  }catch(e){ toast('Network error'); }
+}
 
 /* ================================================================
- *  DRAW ENGINE
+ *  DRAW + OTP  (built and persisted by the backend)
  * ================================================================ */
-function cleanName(s){ return String(s||'').replace(/\s*-\s*[MF]\s*$/i,'').trim(); }
-function minToTime(m){
-  let h=Math.floor(m/60)%24, mm=m%60; const ap=h>=12?'PM':'AM';
-  let h12=h%12; if(h12===0) h12=12;
-  return h12+':'+(mm<10?'0'+mm:mm)+' '+ap;
-}
-/* Circle-method round robin: each team plays at most once per round, so
-   flattening the rounds can never put a team in 3 consecutive matches. */
-function groupSchedule(teams){
-  const ts=teams.slice();
-  if(ts.length%2===1) ts.push(null);   // add a bye for odd team counts
-  const n=ts.length, arr=ts.slice(), ordered=[];
-  for(let r=0;r<n-1;r++){
-    for(let i=0;i<n/2;i++){
-      const a=arr[i], b=arr[n-1-i];
-      if(a&&b) ordered.push({a,b});
-    }
-    arr.splice(1,0,arr.pop());          // rotate, keeping the first fixed
-  }
-  return ordered;
-}
-function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function cap(s){ return s? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
+function closeDraw(){ document.getElementById('drawModal').classList.remove('show'); }
 
-function buildDrawData(key){
-  const c=DASH.categories[key];
-  const rows=c.rows.filter(r=> cleanName(r.player1)!=='');   // ignore empty slots
-  if(rows.length<2) return {error:'Need at least 2 entries to generate a draw.'};
-
-  // build team objects
-  let teams=rows.map(r=>{
-    if(c.type==='singles') return {name:cleanName(r.player1), rating:parseFloat(r.dupr)||0};
-    const nm=cleanName(r.player1)+' / '+cleanName(r.player2);
-    if(c.type==='mixed') return {name:nm, rating:null};
-    let avg=parseFloat(r.avg); if(isNaN(avg)){ const a=parseFloat(r.p1dupr)||0,b=parseFloat(r.p2dupr)||0; avg=(a&&b)?(a+b)/2:0; }
-    return {name:nm, rating:avg};
-  });
-
-  // seed / rank
-  if(c.type==='mixed'){ teams=shuffle(teams); teams.forEach((t,i)=>t.rank=i+1); }
-  else { teams.sort((x,y)=>y.rating-x.rating); teams.forEach((t,i)=>t.rank=i+1); }
-
-  const numGroups = (c.type==='mixed') ? 2 : 3;
-  const groups=[]; for(let g=0; g<numGroups; g++) groups.push({label:'Group '+(g+1), teams:[]});
-  teams.forEach(t=> groups[(t.rank-1)%numGroups].teams.push(t) );
-  groups.forEach(g=> g.teams.sort((a,b)=>a.rank-b.rank) );
-
-  // court assignment
-  let courtN, courtB;
-  if(c.type==='mixed'){ courtN=[groups[0]]; courtB=[groups[1]]; }
-  else { courtN=[groups[1]]; courtB=[groups[0],groups[2]]; }   // N=G2 ; B=G1 then G3
-
-  const start=DRAW_START[key];
-  const groupStage=[];
-  const sched=(court,list)=>{ let t=start; list.forEach(g=>{ groupSchedule(g.teams).forEach(m=>{
-      groupStage.push({court,time:minToTime(t),group:g.label,a:m.a.name,b:m.b.name}); t+=15; }); }); return t; };
-  const endN=sched('Court N',courtN), endB=sched('Court B',courtB);
-  let ko=Math.max(endN,endB);
-
-  // knockout templates
-  const knockout=[]; let note='';
-  if(c.type==='mixed'){
-    knockout.push({stage:'Semi 1', court:'Court N', time:minToTime(ko),    a:'Rank 1 — Group 1', b:'Rank 2 — Group 2'});
-    knockout.push({stage:'Semi 2', court:'Court B', time:minToTime(ko),    a:'Rank 1 — Group 2', b:'Rank 2 — Group 1'});
-    knockout.push({stage:'3rd Place', court:'Court B', time:minToTime(ko+15), a:'Loser of Semi 1', b:'Loser of Semi 2'});
-    knockout.push({stage:'Final', court:'Court N', time:minToTime(ko+30),  a:'Winner of Semi 1', b:'Winner of Semi 2'});
-  }else{
-    knockout.push({stage:'Quarterfinal 1', court:'Court N', time:minToTime(ko),    a:'Rank 1 — Group 1', b:'Qualifier 8'});
-    knockout.push({stage:'Quarterfinal 2', court:'Court B', time:minToTime(ko),    a:'Rank 1 — Group 2', b:'Qualifier 7'});
-    knockout.push({stage:'Quarterfinal 3', court:'Court N', time:minToTime(ko+15), a:'Rank 1 — Group 3', b:'Rank 2 — Group 1'});
-    knockout.push({stage:'Quarterfinal 4', court:'Court B', time:minToTime(ko+15), a:'Rank 2 — Group 2', b:'Rank 2 — Group 3'});
-    knockout.push({stage:'Semi 1', court:'Court N', time:minToTime(ko+30), a:'Winner of QF1', b:'Winner of QF4'});
-    knockout.push({stage:'Semi 2', court:'Court B', time:minToTime(ko+30), a:'Winner of QF2', b:'Winner of QF3'});
-    knockout.push({stage:'Final',  court:'Court N', time:minToTime(ko+45), a:'Winner of Semi 1', b:'Winner of Semi 2'});
-    note='Qualifier 7 = best 3rd-placed team across the groups. Qualifier 8 = second-best 3rd-placed team. '+
-         'Ranked by games won; if tied, the team that conceded fewer points ranks higher.';
-  }
-
-  return { error:null, key, label:c.label, type:c.type, time:c.time, day:c.day,
-    date:DASH.dates[c.day], week:DASH.week, seeds:teams, groups, groupStage, knockout, note };
+async function generateDraw(key){
+  toast('Generating draw…');
+  try{
+    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'generateDraw',week:DASH.week,category:key})});
+    const out=await res.json();
+    if(!out.ok){ toast(out.error||'Could not generate draw'); return; }
+    LAST_DRAW=out.draw; LAST_DRAW.otp=out.otp;
+    renderPreview(out.draw, out.otp, key);
+  }catch(e){ toast('Network error'); }
 }
 
-/* ---------- preview ---------- */
-function generateDraw(key){
-  const d=buildDrawData(key);
-  if(d.error){ toast(d.error); return; }
-  LAST_DRAW=d;
-  renderPreview(d);
+// Look up the day/date/time for a category from the dashboard data.
+function dayInfo(key){
+  for(const g of DAY_GROUPS){ if(g.cats.includes(key)){
+    return { day:g.day, date:DASH.dates[g.day], time:(DASH.categories[key]||{}).time||'' };
+  }}
+  return { day:'', date:'', time:(DASH.categories[key]||{}).time||'' };
 }
-function renderPreview(d){
+
+function drawNote(structure){
+  if(structure==='3group') return 'Qualifier 7 = best 3rd-placed team across the groups; Qualifier 8 = second-best. Standings rank by matches won, then net points (scored − allowed), then head-to-head.';
+  if(structure==='4group') return 'Four groups of four — the winner of each group advances straight to the semifinals.';
+  if(structure==='mixed')  return 'Mixed is randomly seeded into two groups. Top two of each group reach the semifinals, with a 3rd-place play-off before the final.';
+  return '';
+}
+
+function renderPreview(d, otp, key){
+  const di=dayInfo(key);
   let html=`<h2>${d.label} — Draw</h2>
-    <div class="meta">${cap(d.day)} ${d.date} · ${d.time} · Week ${d.week}</div>`;
+    <div class="meta">${cap(di.day)} ${di.date} · ${di.time} · Week ${d.week} · ${d.structure}</div>`;
 
-  // seeding
+  html+=`<div class="otpbox">Referee access code<b>${otp}</b>
+    <span>Read this out to the referees. Valid for this category, today only.</span></div>`;
+
   html+=`<h3>Seeding</h3><table class="dtable"><tr><th>Seed</th><th>${d.type==='singles'?'Player':'Pair'}</th><th>${d.type==='mixed'?'Method':'Rating'}</th></tr>`;
   d.seeds.forEach(t=>{ html+=`<tr><td class="c">${t.rank}</td><td>${t.name}</td><td class="c">${d.type==='mixed'?'Random':(t.rating?Number(t.rating).toFixed(3):'—')}</td></tr>`; });
   html+=`</table>`;
 
-  // groups
   html+=`<h3>Groups</h3><table class="dtable"><tr>${d.groups.map(g=>`<th>${g.label}</th>`).join('')}</tr>`;
-  const maxLen=Math.max(...d.groups.map(g=>g.teams.length));
-  for(let i=0;i<maxLen;i++){ html+='<tr>'+d.groups.map(g=>`<td>${g.teams[i]?('#'+g.teams[i].rank+' '+g.teams[i].name):''}</td>`).join('')+'</tr>'; }
+  const maxLen=Math.max.apply(null, d.groups.map(g=>g.members.length));
+  for(let i=0;i<maxLen;i++){ html+='<tr>'+d.groups.map(g=>`<td>${g.members[i]||''}</td>`).join('')+'</tr>'; }
   html+=`</table>`;
 
-  // group stage schedule
   html+=`<h3>Group Stage — Round Robin</h3><table class="dtable"><tr><th>Time</th><th>Court</th><th>Group</th><th>Match</th></tr>`;
   d.groupStage.forEach(m=>{ html+=`<tr><td class="c">${m.time}</td><td class="c">${m.court}</td><td class="c">${m.group}</td><td>${m.a} &nbsp;vs&nbsp; ${m.b}</td></tr>`; });
   html+=`</table>`;
 
-  // knockout
   html+=`<h3>Knockout Bracket</h3><table class="dtable"><tr><th>Stage</th><th>Court</th><th>Time</th><th>Match</th></tr>`;
   d.knockout.forEach(m=>{ html+=`<tr><td>${m.stage}</td><td class="c">${m.court}</td><td class="c">${m.time}</td><td>${m.a} &nbsp;vs&nbsp; ${m.b}</td></tr>`; });
   html+=`</table>`;
-  if(d.note) html+=`<div class="notebox">${d.note}</div>`;
-  html+=`<div class="notebox">Times are auto-generated at 15-minute intervals from the category start. Knockout times assume on-time group-stage completion — adjust on the night as needed.</div>`;
+
+  const note=drawNote(d.structure);
+  if(note) html+=`<div class="notebox">${note}</div>`;
+  html+=`<div class="notebox">Once you generate this draw the referees can begin scoring with the code above. Re-generating is blocked once any score has been entered.</div>`;
 
   html+=`<div class="modalbar">
       <button class="btn" onclick="closeDraw()">Close</button>
@@ -409,20 +370,15 @@ function renderPreview(d){
   document.getElementById('drawSheet').innerHTML=html;
   document.getElementById('drawModal').classList.add('show');
 }
-function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
-function closeDraw(){ document.getElementById('drawModal').classList.remove('show'); }
 
 /* ---------- .docx download ---------- */
 function downloadDraw(){
   const d=LAST_DRAW; if(!d) return;
   if(typeof docx==='undefined'){ toast('Draw library still loading — try again in a moment.'); return; }
   const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, HeadingLevel } = docx;
-
-  const cell=(t,bold,fill)=> new TableCell({
-    shading: fill?{fill:fill}:undefined,
+  const cell=(t,bold,fill)=> new TableCell({ shading: fill?{fill:fill}:undefined,
     children:[new Paragraph({children:[new TextRun({text:String(t),bold:!!bold})]})] });
-  const mkTable=(headers,rowsArr)=> new Table({
-    width:{size:100,type:WidthType.PERCENTAGE},
+  const mkTable=(headers,rowsArr)=> new Table({ width:{size:100,type:WidthType.PERCENTAGE},
     rows:[ new TableRow({children:headers.map(h=>cell(h,true,'EEF3ED'))}),
            ...rowsArr.map(r=> new TableRow({children:r.map(x=>cell(x,false))})) ] });
   const H=(t,lvl)=> new Paragraph({text:t, heading:lvl, spacing:{before:240,after:120}});
@@ -430,15 +386,15 @@ function downloadDraw(){
 
   const kids=[];
   kids.push(new Paragraph({children:[new TextRun({text:d.label+' — Draw', bold:true, size:32})]}));
-  kids.push(P(cap(d.day)+' '+d.date+'  ·  '+d.time+'  ·  Week '+d.week));
+  kids.push(P('Week '+d.week+'  ·  '+d.structure+'  ·  Referee code: '+(d.otp||'')));
 
   kids.push(H('Seeding', HeadingLevel.HEADING_2));
   kids.push(mkTable(['Seed', d.type==='singles'?'Player':'Pair', d.type==='mixed'?'Method':'Rating'],
     d.seeds.map(t=>[String(t.rank), t.name, d.type==='mixed'?'Random':(t.rating?Number(t.rating).toFixed(3):'—')])));
 
   kids.push(H('Groups', HeadingLevel.HEADING_2));
-  const maxLen=Math.max(...d.groups.map(g=>g.teams.length));
-  const grows=[]; for(let i=0;i<maxLen;i++) grows.push(d.groups.map(g=> g.teams[i]?('#'+g.teams[i].rank+' '+g.teams[i].name):''));
+  const maxLen=Math.max.apply(null, d.groups.map(g=>g.members.length));
+  const grows=[]; for(let i=0;i<maxLen;i++) grows.push(d.groups.map(g=> g.members[i]||''));
   kids.push(mkTable(d.groups.map(g=>g.label), grows));
 
   kids.push(H('Group Stage — Round Robin', HeadingLevel.HEADING_2));
@@ -449,17 +405,15 @@ function downloadDraw(){
   kids.push(mkTable(['Stage','Court','Time','Match'],
     d.knockout.map(m=>[m.stage,m.court,m.time,m.a+'  vs  '+m.b])));
 
-  if(d.note){ kids.push(H('Notes', HeadingLevel.HEADING_2)); kids.push(P(d.note)); }
-  kids.push(P('Times are auto-generated at 15-minute intervals from the category start. Knockout times assume on-time group-stage completion.'));
+  const note=drawNote(d.structure);
+  if(note){ kids.push(H('Notes', HeadingLevel.HEADING_2)); kids.push(P(note)); }
 
   const doc=new Document({sections:[{children:kids}]});
   Packer.toBlob(doc).then(blob=>{
     const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;
+    const a=document.createElement('a'); a.href=url;
     a.download=(d.label.replace(/[^a-z0-9]+/gi,'_'))+'_Week'+d.week+'_Draw.docx';
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     toast('Draw downloaded');
   }).catch(()=> toast('Could not build the .docx — try again.'));
 }
