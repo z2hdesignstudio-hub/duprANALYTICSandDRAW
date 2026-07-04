@@ -600,7 +600,7 @@ function downloadDraw(){
     // Derive court from actual match data (not hardcoded by letter)
     const gCourt=(d.groupStage.find(m=>m.group===g.label)||{}).court||'Court N';
     kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
-      row(cell('Group '+g.label+' - '+g.members.length+' participants - '+matchCount+' round-robin matches - '+gCourt,{bg:catColor,color:WHITE,bold:true,size:20}))
+      row(cell(g.label+' - '+g.members.length+' participants - '+matchCount+' round-robin matches - '+gCourt,{bg:catColor,color:WHITE,bold:true,size:20}))
     ]}));
     kids.push(spacer());
   });
@@ -611,7 +611,7 @@ function downloadDraw(){
 
     // Category header (em dash replaced with regular dash)
     kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
-      row(cell(d.label+' - Group '+g.label,{bg:DARK,color:WHITE,bold:true,size:26}))
+      row(cell(d.label+' - '+g.label,{bg:DARK,color:WHITE,bold:true,size:26}))
     ]}));
     kids.push(spacer());
 
