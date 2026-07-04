@@ -149,6 +149,9 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
   font-size:.72rem;border:1px solid #d7e1d4;font-weight:800;}
 .dtable td{padding:8px 10px;border:1px solid #d7e1d4;font-weight:600;}
 .dtable td.c{text-align:center;}
+/* Reset the general td:first-child lime styling so all dtable columns look identical */
+.dtable td:first-child{border-radius:0;font-family:'Nunito',sans-serif;font-weight:600;
+  text-align:left;width:auto;color:var(--ink);}
 .notebox{background:var(--surface-2);box-shadow:var(--clay-in);border-radius:var(--r-sm);
   padding:12px 14px;font-size:.85rem;font-weight:600;color:var(--muted);margin-top:8px;}
 
@@ -190,7 +193,7 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 
 <!-- Floating nav bar -->
 <nav class="floatnav">
-   <a href="https://pb71.org" target="_blank">Registrations</a>
+  <a href="https://pb71.org/">Registrations</a>
   <a href="https://z2hdesignstudio-hub.github.io/scoringDUPR/" target="_blank">Score</a>
   <a href="https://z2hdesignstudio-hub.github.io/DUPRleaderboard/" target="_blank">Leaderboard</a>
 </nav>
@@ -493,7 +496,7 @@ async function confirmDraw(){
 /* ======================== DRAW PREVIEW ======================== */
 function renderDrawPreview(d,otp,key){
   const c=DASH.categories[key];
-  let html=`<h2>${d.label} — Draw Preview</h2>
+  let html=`<h2>${d.label} - Draw Preview</h2>
     <div class="meta">Week ${d.week} · ${d.structure} · ${d.numGroups} group(s) · ${d.numFinals} final(s)</div>
     <div class="otp-banner">Referee access code<b>${otp}</b>
       <span>Share this with referees. Valid for this category all week.</span></div>`;
@@ -594,8 +597,10 @@ function downloadDraw(){
   kids.push(P('Groups Summary',{bold:true,size:24}));
   d.groups.forEach(g=>{
     const matchCount=d.groupStage.filter(m=>m.group===g.label).length;
+    // Derive court from actual match data (not hardcoded by letter)
+    const gCourt=(d.groupStage.find(m=>m.group===g.label)||{}).court||'Court N';
     kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
-      row(cell('Group '+g.label+' — '+g.members.length+' participants · '+matchCount+' round-robin matches',{bg:catColor,color:WHITE,bold:true,size:20}))
+      row(cell('Group '+g.label+' - '+g.members.length+' participants - '+matchCount+' round-robin matches - '+gCourt,{bg:catColor,color:WHITE,bold:true,size:20}))
     ]}));
     kids.push(spacer());
   });
@@ -604,14 +609,14 @@ function downloadDraw(){
   d.groups.forEach((g,gi)=>{
     kids.push(new Paragraph({pageBreakBefore:gi>0,text:'',spacing:{after:80}}));
 
-    // Category header
+    // Category header (em dash replaced with regular dash)
     kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
-      row(cell(d.label+' — Group '+g.label,{bg:DARK,color:WHITE,bold:true,size:26}))
+      row(cell(d.label+' - Group '+g.label,{bg:DARK,color:WHITE,bold:true,size:26}))
     ]}));
     kids.push(spacer());
 
-    // Group court section
-    const courtLabel=g.label==='A'||g.label==='B'?'Court N':'Court B';
+    // Court derived from actual match data (Fix 3: no more hardcoded A/B=N, C=B)
+    const courtLabel=(d.groupStage.find(m=>m.group===g.label)||{}).court||'Court N';
     kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
       row(cell(courtLabel+' · '+g.members.length+' players',{bg:catColor,color:WHITE,bold:true,size:22}))
     ]}));
@@ -626,16 +631,17 @@ function downloadDraw(){
       )]}));
     });
 
-    // Round robin schedule
+    // Round robin schedule (Fix 4: time column added before match ID)
     const groupMatches=d.groupStage.filter(m=>m.group===g.label);
     kids.push(spacer());
-    kids.push(P('ROUND ROBIN SCHEDULE · '+groupMatches.length+' MATCHES',{bold:true,color:catColor,size:18}));
+    kids.push(P('ROUND ROBIN SCHEDULE - '+groupMatches.length+' MATCHES',{bold:true,color:catColor,size:18}));
     groupMatches.forEach((m,mi)=>{
       kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[row(
-        cell(m.id,{bg:catColor,color:WHITE,bold:true,size:16,center:true,w:8}),
-        cell(m.a,{size:18,w:40}),
-        cell('vs',{size:16,color:catColor,center:true,w:12}),
-        cell(m.b,{size:18,w:40})
+        cell(m.time,{size:16,center:true,color:'444444',w:14}),
+        cell(m.id,{bg:catColor,color:WHITE,bold:true,size:16,center:true,w:9}),
+        cell(m.a,{size:18,w:34}),
+        cell('vs',{size:16,color:catColor,center:true,w:9}),
+        cell(m.b,{size:18,w:34})
       )]}));
     });
 
@@ -660,26 +666,26 @@ function downloadDraw(){
     ]}));
   });
 
-  // === KNOCKOUT PAGE ===
+  // === KNOCKOUT PAGE === (Fix 5: time column added to every match row)
   kids.push(new Paragraph({pageBreakBefore:true,text:'',spacing:{after:80}}));
   kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
     row(cell('KNOCKOUT STAGE',{bg:DARK,color:WHITE,bold:true,size:28,center:true}))
   ]}));
   kids.push(spacer());
 
-  // Group knockout by stage
   const stages=[...new Set(d.knockout.map(m=>m.stage))];
   stages.forEach(stage=>{
     const stageMoves=d.knockout.filter(m=>m.stage===stage);
-    const stageLabel=stage==='final'?'FINAL BEE OF THE COURT':
+    const stageLabel=stage==='final'?'FINAL - BEE OF THE COURT':
       stage==='final1'?'FINAL 1':stage==='final2'?'FINAL 2':
       stage.toUpperCase().replace('QF','QUARTERFINAL ').replace('SF','SEMI FINAL ').replace('CON','CONSOLATION');
     kids.push(P(stageLabel,{bold:true,size:22,before:160}));
     stageMoves.forEach(m=>{
       kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[row(
-        cell(m.a,{size:18,w:40}),
-        cell('vs',{size:16,color:catColor,center:true,w:20}),
-        cell(m.b,{size:18,w:40}),
+        cell(m.time||'',{size:16,center:true,color:'444444',w:14}),
+        cell(m.a,{size:18,w:36}),
+        cell('vs',{size:16,color:catColor,center:true,w:14}),
+        cell(m.b,{size:18,w:36}),
       )]}));
     });
     kids.push(spacer());
