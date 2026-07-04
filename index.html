@@ -7,33 +7,28 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<!-- docx library: builds real .docx files in the browser -->
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <style>
 :root{
-  --bg:#e9efe9; --surface:#f4f8f3; --surface-2:#eef3ed;
-  --lime:#a8d600; --lime-deep:#8bb800; --pink:#ff2e9a; --cyan:#12cccc;
-  --ink:#1c2a1f; --muted:#6b7d6e;
-  --clay:7px 7px 18px rgba(60,80,55,.18), -7px -7px 16px rgba(255,255,255,.9);
-  --clay-in:inset 4px 4px 9px rgba(60,80,55,.16), inset -4px -4px 9px rgba(255,255,255,.85);
-  --clay-sm:4px 4px 11px rgba(60,80,55,.16), -4px -4px 10px rgba(255,255,255,.85);
-  --r:24px; --r-sm:13px;
+  --bg:#e9efe9;--surface:#f4f8f3;--surface-2:#eef3ed;
+  --lime:#a8d600;--lime-deep:#8bb800;--pink:#ff2e9a;--cyan:#12cccc;--orange:#ff8f00;
+  --ink:#1c2a1f;--muted:#6b7d6e;
+  --clay:7px 7px 18px rgba(60,80,55,.18),-7px -7px 16px rgba(255,255,255,.9);
+  --clay-in:inset 4px 4px 9px rgba(60,80,55,.16),inset -4px -4px 9px rgba(255,255,255,.85);
+  --clay-sm:4px 4px 11px rgba(60,80,55,.16),-4px -4px 10px rgba(255,255,255,.85);
+  --r:24px;--r-sm:13px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{
-  font-family:'Nunito',sans-serif; color:var(--ink); padding:24px 16px 70px;
-  background:
-    radial-gradient(circle at 10% 6%, rgba(168,214,0,.10), transparent 40%),
-    radial-gradient(circle at 92% 96%, rgba(18,204,204,.10), transparent 42%),
-    var(--bg);
-  min-height:100vh; -webkit-font-smoothing:antialiased;
-}
+body{font-family:'Nunito',sans-serif;color:var(--ink);padding:24px 16px 90px;min-height:100vh;
+  background:radial-gradient(circle at 10% 6%,rgba(168,214,0,.10),transparent 40%),
+  radial-gradient(circle at 92% 96%,rgba(18,204,204,.10),transparent 42%),var(--bg);
+  -webkit-font-smoothing:antialiased;}
 .wrap{max-width:1240px;margin:0 auto;}
 header{text-align:center;margin-bottom:30px;}
-.logo{width:92px;height:92px;object-fit:contain;background:var(--surface);
-  border-radius:50%;box-shadow:var(--clay);padding:12px;margin:0 auto 16px;display:block;}
-.eyebrow{font-family:'Fredoka',sans-serif;font-weight:600;letter-spacing:.5px;
-  color:var(--cyan);text-transform:uppercase;font-size:.8rem;margin-bottom:4px;}
+.logo{width:92px;height:92px;object-fit:contain;background:var(--surface);border-radius:50%;
+  box-shadow:var(--clay);padding:12px;margin:0 auto 16px;display:block;}
+.eyebrow{font-family:'Fredoka',sans-serif;font-weight:600;letter-spacing:.5px;color:var(--cyan);
+  text-transform:uppercase;font-size:.8rem;margin-bottom:4px;}
 h1{font-family:'Fredoka',sans-serif;font-weight:700;font-size:clamp(1.5rem,4vw,2.4rem);line-height:1.08;}
 h1 .hl{color:var(--pink);}
 .toolbar{display:flex;justify-content:center;gap:12px;margin:18px 0 4px;flex-wrap:wrap;}
@@ -43,8 +38,8 @@ h1 .hl{color:var(--pink);}
 .btn:hover{transform:translateY(-2px);}
 .btn.cyan{background:var(--cyan);color:#fff;}
 .daysection{margin-top:34px;}
-.dayhead{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.35rem;
-  margin-bottom:4px;display:flex;align-items:center;gap:12px;}
+.dayhead{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.35rem;margin-bottom:4px;
+  display:flex;align-items:center;gap:12px;}
 .dayhead .date{font-size:.95rem;color:var(--muted);font-weight:700;font-family:'Nunito';}
 .catcard{background:var(--surface);border-radius:var(--r);box-shadow:var(--clay);
   padding:20px 18px;margin-top:18px;}
@@ -87,52 +82,94 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 .rowacts{display:flex;flex-wrap:nowrap;}
 .emptyrow{color:var(--muted);font-weight:700;padding:14px;text-align:center;
   background:var(--surface-2);border-radius:var(--r-sm);}
-.drawbtn{font-family:'Fredoka';font-weight:600;font-size:1rem;color:#fff;border:none;
-  cursor:pointer;border-radius:var(--r-sm);padding:12px 22px;
-  background:linear-gradient(135deg,var(--cyan),var(--lime-deep));box-shadow:var(--clay-sm);}
-.drawbtn:hover{transform:translateY(-2px);}
 .cardbtns{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;}
 .addbtn{font-family:'Fredoka';font-weight:600;font-size:1rem;color:var(--ink);border:none;
   cursor:pointer;border-radius:var(--r-sm);padding:12px 22px;
   background:var(--surface-2);box-shadow:var(--clay-sm);}
 .addbtn:hover{transform:translateY(-2px);background:#e3edda;}
+.drawbtn{font-family:'Fredoka';font-weight:600;font-size:1rem;color:#fff;border:none;
+  cursor:pointer;border-radius:var(--r-sm);padding:12px 22px;
+  background:linear-gradient(135deg,var(--cyan),var(--lime-deep));box-shadow:var(--clay-sm);}
+.drawbtn:hover{transform:translateY(-2px);}
 .loading{text-align:center;color:var(--muted);font-weight:700;padding:50px;}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
   background:var(--ink);color:#fff;font-weight:700;padding:12px 22px;border-radius:14px;
   box-shadow:var(--clay);opacity:0;pointer-events:none;transition:opacity .3s;z-index:80;}
 .toast.show{opacity:1;}
 
-/* ---- Draw preview modal ---- */
-.modal{position:fixed;inset:0;background:rgba(28,42,31,.55);backdrop-filter:blur(5px);
-  display:none;z-index:70;padding:22px;overflow:auto;}
-.modal.show{display:block;}
-.sheet{max-width:900px;margin:0 auto;background:var(--surface);border-radius:var(--r);
-  box-shadow:var(--clay);padding:26px 24px 32px;}
-.sheet h2{font-family:'Fredoka';font-weight:700;font-size:1.5rem;}
-.sheet .meta{color:var(--muted);font-weight:700;margin:4px 0 18px;}
-.sheet h3{font-family:'Fredoka';font-weight:600;font-size:1.12rem;margin:22px 0 10px;
+/* Draw config popup */
+.modal{position:fixed;inset:0;background:rgba(28,42,31,.6);backdrop-filter:blur(5px);
+  display:none;z-index:70;padding:22px 16px;overflow:auto;align-items:flex-start;justify-content:center;}
+.modal.show{display:flex;}
+.msheet{max-width:620px;width:100%;background:var(--surface);border-radius:var(--r);
+  box-shadow:var(--clay);padding:28px 24px;margin:auto;}
+.msheet h2{font-family:'Fredoka',sans-serif;font-weight:700;font-size:1.4rem;margin-bottom:4px;}
+.msheet .msub{color:var(--muted);font-weight:700;margin-bottom:20px;font-size:.9rem;}
+.msheet h3{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1rem;margin:18px 0 10px;}
+.cfgtotal{font-family:'Fredoka',sans-serif;font-size:1.1rem;font-weight:600;
+  padding:12px 16px;border-radius:var(--r-sm);background:var(--surface-2);
+  box-shadow:var(--clay-in);margin-bottom:18px;color:var(--ink);}
+.cfgtotal b{color:var(--cyan);}
+.segg{display:flex;gap:8px;flex-wrap:wrap;}
+.segg button{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1rem;
+  padding:11px 18px;border:none;border-radius:var(--r-sm);cursor:pointer;
+  background:var(--surface-2);box-shadow:var(--clay-sm);color:var(--muted);transition:all .15s;}
+.segg button.sel{background:var(--ink);color:#fff;box-shadow:var(--clay-in);}
+.segg button.fin{background:var(--surface-2);}
+.segg button.fin.sel{background:var(--cyan);color:#fff;}
+.segg button:disabled{opacity:.4;cursor:not-allowed;}
+.grp-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:12px;}
+.grp-inp-wrap label{display:block;font-weight:800;font-size:.82rem;margin-bottom:6px;color:var(--muted);}
+.grp-inp-wrap input{width:100%;font-family:'Nunito';font-weight:700;font-size:1.1rem;text-align:center;
+  color:var(--ink);padding:12px 8px;border:2px solid transparent;border-radius:var(--r-sm);
+  background:var(--surface-2);box-shadow:var(--clay-in);outline:none;transition:border-color .2s;}
+.grp-inp-wrap input.ok{border-color:var(--lime);}
+.grp-inp-wrap input.err{border-color:var(--pink);}
+.sum-pill{display:inline-block;margin-top:14px;padding:8px 16px;border-radius:14px;
+  font-weight:800;font-size:.88rem;}
+.sum-pill.ok{background:#d6f0c2;color:#3a6b00;}
+.sum-pill.err{background:#ffe1ef;color:var(--pink);}
+.mbtns{display:flex;gap:12px;margin-top:24px;justify-content:flex-end;flex-wrap:wrap;}
+.mbtns .btn.green{background:linear-gradient(135deg,var(--lime),var(--lime-deep));color:#fff;}
+.mbtns .btn.green:disabled{background:var(--surface-2);color:#a8b8aa;cursor:not-allowed;transform:none;}
+
+/* Draw preview sheet */
+.psheet{max-width:900px;background:var(--surface);border-radius:var(--r);
+  box-shadow:var(--clay);padding:26px 24px 32px;margin:auto;}
+.psheet .otp-banner{background:linear-gradient(135deg,var(--cyan),var(--lime-deep));
+  color:#fff;border-radius:var(--r-sm);padding:16px 18px;margin:4px 0 20px;text-align:center;}
+.psheet .otp-banner b{font-family:'Fredoka',sans-serif;font-size:2.4rem;letter-spacing:.2em;display:block;margin-top:2px;}
+.psheet .otp-banner span{font-size:.82rem;font-weight:600;opacity:.92;display:block;margin-top:4px;}
+.psheet h2{font-family:'Fredoka',sans-serif;font-weight:700;font-size:1.5rem;}
+.psheet .meta{color:var(--muted);font-weight:700;margin:4px 0 18px;}
+.psheet h3{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.12rem;margin:22px 0 10px;
   padding-bottom:6px;border-bottom:2px solid var(--surface-2);}
 .dtable{width:100%;border-collapse:collapse;margin-bottom:6px;font-size:.9rem;}
 .dtable th{background:var(--surface-2);color:var(--ink);text-align:left;padding:8px 10px;
-  font-size:.72rem;border:1px solid #d7e1d4;}
+  font-size:.72rem;border:1px solid #d7e1d4;font-weight:800;}
 .dtable td{padding:8px 10px;border:1px solid #d7e1d4;font-weight:600;}
 .dtable td.c{text-align:center;}
 .notebox{background:var(--surface-2);box-shadow:var(--clay-in);border-radius:var(--r-sm);
   padding:12px 14px;font-size:.85rem;font-weight:600;color:var(--muted);margin-top:8px;}
-.otpbox{background:linear-gradient(135deg,var(--cyan),var(--lime-deep));color:#fff;
-  border-radius:var(--r-sm);box-shadow:var(--clay-sm);padding:16px 18px;margin:6px 0 16px;
-  font-weight:700;font-size:1.05rem;text-align:center;}
-.otpbox b{font-family:'Fredoka';font-size:2rem;letter-spacing:.15em;display:inline-block;margin-top:2px;}
-.otpbox span{display:block;font-weight:600;font-size:.8rem;opacity:.92;margin-top:6px;}
-.modalbar{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;flex-wrap:wrap;}
-.modalbar .btn.green{background:linear-gradient(135deg,var(--lime),var(--lime-deep));color:#fff;}
+
+/* Floating nav bar */
+.floatnav{position:fixed;bottom:0;left:0;right:0;z-index:90;
+  background:var(--surface);box-shadow:0 -4px 20px rgba(60,80,55,.15);
+  display:flex;align-items:stretch;height:62px;border-top:2px solid var(--surface-2);}
+.floatnav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:'Fredoka',sans-serif;font-weight:600;font-size:.9rem;color:var(--muted);
+  text-decoration:none;gap:3px;transition:color .15s;}
+.floatnav a.active,.floatnav a:hover{color:var(--cyan);}
+.floatnav a .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);
+  display:none;margin-top:2px;}
+.floatnav a.active .dot{display:block;}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <img src="./picklebee-logo.png" class="logo" alt="PickleBee by 71" onerror="this.style.display='none'">
-    <div class="eyebrow">DUPR Night Analytics</div>
+    <div class="eyebrow">DUPR Night Analytics — Season 2</div>
     <h1 id="welcome">Insights from PickleBee by 71</h1>
     <div class="toolbar">
       <button class="btn cyan" onclick="loadDashboard()">Reload data</button>
@@ -141,55 +178,98 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
   <div id="content"><div class="loading">Loading registrations…</div></div>
 </div>
 
-<div class="modal" id="drawModal">
-  <div class="sheet" id="drawSheet"></div>
+<!-- Draw config popup -->
+<div class="modal" id="cfgModal">
+  <div class="msheet" id="cfgSheet"></div>
 </div>
+
+<!-- Draw preview modal -->
+<div class="modal" id="drawModal">
+  <div class="psheet" id="drawSheet"></div>
+</div>
+
+<!-- Floating nav bar -->
+<nav class="floatnav">
+  <a href="#">Registrations</a>
+  <a href="PASTE_SCORE_SITE_URL_HERE" target="_blank">Score</a>
+  <a href="PASTE_LEADERBOARD_SITE_URL_HERE" target="_blank">Leaderboard</a>
+</nav>
 
 <div class="toast" id="toast"></div>
 
 <script>
 /* ============================================================
-   PASTE THE SAME APPS SCRIPT /exec URL YOU USED FOR WEBSITE 1
+   PASTE YOUR APPS SCRIPT /exec URL HERE
    ============================================================ */
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzeZaUXvfqsA1oVqwwnSxdn_JJrYnCJQ5-3vA0-TCJSjMZUP2tRMEl-PawqlxZ5opGbXg/exec";
 
-let DASH = null;
-let LAST_DRAW = null;
+const WEEK14_START = new Date(2026, 5, 13); // Sat 13 Jun 2026
 
-const DAY_GROUPS = [
-  { day:'tuesday',   title:'Tuesday Schedule',   cats:['newbee_doubles','mixed_doubles'] },
-  { day:'wednesday', title:'Wednesday Schedule', cats:['stinger_doubles'] },
+// Day sections in display order — filtered by active week
+const DAY_GROUPS_FULL = [
+  { day:'monday',    title:'Monday Schedule',    cats:['action_doubles'],              sinceWeek:17 },
+  { day:'tuesday',   title:'Tuesday Schedule',   cats:['mixed_doubles'] },
+  { day:'wednesday', title:'Wednesday Schedule', cats:['newbee_doubles','stinger_doubles'] },
   { day:'thursday',  title:'Thursday Schedule',  cats:['newbee_singles','stinger_singles'] },
 ];
 
-/* start time (in minutes from midnight) for each category's draw */
+function getDayGroups(week){
+  return DAY_GROUPS_FULL.filter(g=>!g.sinceWeek||week>=g.sinceWeek);
+}
 
-/* =================== load + render dashboard =================== */
+let DASH = null;
+let LAST_DRAW = null;
+let CURRENT_DRAW_KEY = null;
+
+// PERF: debounce storage for cell saves
+const _debounce = {};
+
+/* ======================== dashboard ======================== */
 async function loadDashboard(){
-  document.getElementById('content').innerHTML = '<div class="loading">Loading registrations…</div>';
+  document.getElementById('content').innerHTML='<div class="loading">Loading registrations…</div>';
   try{
-    const res = await fetch(BACKEND_URL + '?action=dashboard');
-    DASH = await res.json();
-    document.getElementById('welcome').innerHTML =
+    const res=await fetch(BACKEND_URL+'?action=dashboard');
+    DASH=await res.json();
+    document.getElementById('welcome').innerHTML=
       `Insights from the <span class="hl">Week ${DASH.week}</span> of DUPR at PickleBee by 71`;
     render();
   }catch(e){
-    document.getElementById('content').innerHTML =
-      '<div class="loading">Couldn\'t load data. Check the backend URL and try Reload.</div>';
+    document.getElementById('content').innerHTML='<div class="loading">Could not load data. Check URL and try Reload.</div>';
   }
 }
+
 function render(){
-  const root = document.getElementById('content'); root.innerHTML='';
-  DAY_GROUPS.forEach(group=>{
+  const root=document.getElementById('content'); root.innerHTML='';
+  getDayGroups(DASH.week).forEach(group=>{
     const sec=document.createElement('div'); sec.className='daysection';
-    sec.innerHTML=`<div class="dayhead">${group.title}<span class="date">${DASH.dates[group.day]}</span></div>`;
-    group.cats.forEach(key=> sec.appendChild(buildCatCard(key)) );
+    const date=DASH.dates&&DASH.dates[group.day]?DASH.dates[group.day]:'';
+    sec.innerHTML=`<div class="dayhead">${group.title}<span class="date">${date}</span></div>`;
+    group.cats.forEach(key=>{
+      if(!DASH.categories[key]) return;
+      const card=buildCatCard(key);
+      card.id='catcard-'+key;
+      sec.appendChild(card);
+    });
     root.appendChild(sec);
   });
 }
+
+// PERF: update only one category card in-place (no full re-render)
+async function refreshCard(key){
+  try{
+    const res=await fetch(BACKEND_URL+'?action=dashboard');
+    DASH=await res.json();
+    const existing=document.getElementById('catcard-'+key);
+    if(!existing){render();return;}
+    const newCard=buildCatCard(key);
+    newCard.id='catcard-'+key;
+    existing.replaceWith(newCard);
+  }catch(e){ toast('Could not refresh'); }
+}
+
 function buildCatCard(key){
   const c=DASH.categories[key];
-  const addLabel = c.type==='singles' ? 'Add a BEE' : 'Add a Pair of BEEs';
+  const addLabel=c.type==='singles'?'Add a BEE':'Add a Pair of BEEs';
   const card=document.createElement('div'); card.className='catcard';
   card.innerHTML=`
     <div class="cattop">
@@ -199,13 +279,15 @@ function buildCatCard(key){
     <div class="table-scroll">${buildTable(key,c)}</div>
     <div class="cardbtns">
       <button class="addbtn" onclick="addSlot('${key}')">+ ${addLabel}</button>
-      <button class="drawbtn" onclick="generateDraw('${key}')">Generate Draw</button>
+      <button class="drawbtn" onclick="openDrawConfig('${key}')">Generate Draw</button>
     </div>`;
   return card;
 }
+
 function buildTable(key,c){
   if(c.rows.length===0) return '<div class="emptyrow">No registrations yet.</div>';
-  let head, body='';
+  const hasData=r=>String(r.player1||'').trim()!=='';
+  let head,body='';
   if(c.type==='doubles'){
     head=`<tr><th>#</th><th>Player 1</th><th>Player 2</th><th>P1 DUPR</th><th>P2 DUPR</th>
       <th>Avg</th><th>Slip</th><th>Pay P1</th><th>Pay P2</th><th></th></tr>`;
@@ -218,7 +300,7 @@ function buildTable(key,c){
       <td>${slip(r.slip)}</td>
       <td>${pay(key,r.index,'payconf1',r.payconf1)}</td>
       <td>${pay(key,r.index,'payconf2',r.payconf2)}</td>
-      <td><div class="rowacts">${del(key,r.index)}${xdel(key,r.index,!!r.player1)}</div></td></tr>`; });
+      <td><div class="rowacts">${del(key,r.index)}${xdel(key,r.index,hasData(r))}</div></td></tr>`;});
   }else if(c.type==='mixed'){
     head=`<tr><th>#</th><th>Player 1</th><th>Player 2</th><th>Slip</th><th>Pay P1</th><th>Pay P2</th><th></th></tr>`;
     c.rows.forEach(r=>{ body+=`<tr><td>${r.num}</td>
@@ -227,7 +309,7 @@ function buildTable(key,c){
       <td>${slip(r.slip)}</td>
       <td>${pay(key,r.index,'payconf1',r.payconf1)}</td>
       <td>${pay(key,r.index,'payconf2',r.payconf2)}</td>
-      <td><div class="rowacts">${del(key,r.index)}${xdel(key,r.index,!!r.player1)}</div></td></tr>`; });
+      <td><div class="rowacts">${del(key,r.index)}${xdel(key,r.index,hasData(r))}</div></td></tr>`;});
   }else{
     head=`<tr><th>#</th><th>Player 1</th><th>DUPR</th><th>Slip</th><th>Payment</th><th></th></tr>`;
     c.rows.forEach(r=>{ body+=`<tr><td>${r.num}</td>
@@ -235,10 +317,11 @@ function buildTable(key,c){
       <td>${num(key,r.index,'dupr',r.dupr)}</td>
       <td>${slip(r.slip)}</td>
       <td>${pay(key,r.index,'payconf',r.payconf)}</td>
-      <td><div class="rowacts">${del(key,r.index)}${xdel(key,r.index,!!r.player1)}</div></td></tr>`; });
+      <td><div class="rowacts">${del(key,r.index)}${xdel(key,r.index,hasData(r))}</div></td></tr>`;});
   }
   return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
 }
+
 function esc(v){ return String(v==null?'':v).replace(/"/g,'&quot;'); }
 function txt(key,i,field,val,w){ return `<input type="text" style="min-width:${w}px" value="${esc(val)}" onkeydown="enterNext(event,this)" onchange="saveCell(this,'${key}',${i},'${field}')">`; }
 function num(key,i,field,val){ return `<input type="number" step="0.001" class="dupr" value="${esc(val)}" onkeydown="enterNext(event,this)" onchange="saveCell(this,'${key}',${i},'${field}')">`; }
@@ -248,165 +331,362 @@ function pay(key,i,field,val){ const v=(val==='Paid')?'Paid':'Pending';
 function slip(url){ if(!url) return '<span class="sliplink none">none</span>';
   return `<a class="sliplink" href="${esc(url)}" target="_blank" rel="noopener">View slip</a>`; }
 function del(key,i){ return `<button class="del" onclick="deleteRow('${key}',${i})">Delete</button>`; }
-function xdel(key,i,hasData){ return `<button class="xdel" onclick="removeSlot('${key}',${i},${hasData})" title="Remove this slot entirely">X</button>`; }
+function xdel(key,i,hasData){ return `<button class="xdel" onclick="removeSlot('${key}',${i},${hasData})" title="Remove this slot">X</button>`; }
 
-/* Pressing Enter jumps to the next editable text/number cell (and saves the
-   current one, since leaving the field fires its change handler). */
-function enterNext(event, el){
-  if(event.key !== 'Enter') return;
-  event.preventDefault();
-  const inputs = Array.from(document.querySelectorAll(
-    '#content input[type=text], #content input[type=number]'));
-  const i = inputs.indexOf(el);
-  if(i > -1 && i < inputs.length - 1) inputs[i+1].focus();
-  else el.blur();
+/* ---- Enter-to-next-field ---- */
+function enterNext(event,el){
+  if(event.key!=='Enter')return; event.preventDefault();
+  const inputs=Array.from(document.querySelectorAll('#content input[type=text],#content input[type=number]'));
+  const i=inputs.indexOf(el);
+  if(i>-1&&i<inputs.length-1)inputs[i+1].focus();else el.blur();
 }
 
-/* =================== edits + deletes =================== */
-async function saveCell(el,key,index,field){
+/* ======================== edits ======================== */
+// PERF: 400ms debounce on cell saves — prevents duplicate writes from fast typists
+function saveCell(el,key,index,field){
+  const k=`${key}_${index}_${field}`;
+  clearTimeout(_debounce[k]);
+  _debounce[k]=setTimeout(()=>_doSaveCell(el,key,index,field),400);
+}
+async function _doSaveCell(el,key,index,field){
   try{
     const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'update',week:DASH.week,category:key,index:index,field:field,value:el.value})});
     const out=await res.json();
     if(out.ok){
-      if(el.tagName==='INPUT'){ el.classList.add('saved'); setTimeout(()=>el.classList.remove('saved'),1000); }
-      if(out.avg!==null && out.avg!==undefined){ const a=document.getElementById(`avg-${key}-${index}`); if(a) a.textContent=out.avg||'—'; }
+      if(el.tagName==='INPUT'){el.classList.add('saved');setTimeout(()=>el.classList.remove('saved'),1000);}
+      if(out.avg!=null){const a=document.getElementById(`avg-${key}-${index}`);if(a)a.textContent=out.avg||'—';}
       toast('Saved');
-    }else{ failCell(el); toast(out.error||'Save failed'); }
-  }catch(e){ failCell(el); toast('Network error'); }
+    }else{failCell(el);toast(out.error||'Save failed');}
+  }catch(e){failCell(el);toast('Network error');}
 }
-function failCell(el){ if(el.tagName==='INPUT'){ el.classList.add('failed'); setTimeout(()=>el.classList.remove('failed'),1500);} }
+function failCell(el){if(el.tagName==='INPUT'){el.classList.add('failed');setTimeout(()=>el.classList.remove('failed'),1500);}}
+
 async function deleteRow(key,index){
-  if(!confirm('Remove this entry? This frees the spot on the registration site.')) return;
+  if(!confirm('Remove this entry? This frees the spot on the registration site.'))return;
   try{
     const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'delete',week:DASH.week,category:key,index:index})});
     const out=await res.json();
-    if(out.ok){ toast('Entry removed'); loadDashboard(); } else toast(out.error||'Delete failed');
-  }catch(e){ toast('Network error'); }
+    if(out.ok){toast('Entry removed');refreshCard(key);}else toast(out.error||'Delete failed');
+  }catch(e){toast('Network error');}
 }
 async function addSlot(key){
   try{
     const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'addSlot',week:DASH.week,category:key})});
     const out=await res.json();
-    if(out.ok){ toast('Slot added'); loadDashboard(); } else toast(out.error||'Could not add slot');
-  }catch(e){ toast('Network error'); }
+    if(out.ok){toast('Slot added');refreshCard(key);}else toast(out.error||'Could not add slot');
+  }catch(e){toast('Network error');}
 }
 async function removeSlot(key,index,hasData){
-  const msg = hasData
-    ? 'This slot still has a registration in it. Removing it will DELETE that entry AND remove the slot itself — capacity drops by one. This cannot be undone. Continue?'
-    : 'Remove this empty slot? Category capacity will drop by one.';
-  if(!confirm(msg)) return;
+  const msg=hasData?'This slot has a registration. Removing it will DELETE that entry AND remove the slot — capacity drops by one. Continue?':'Remove this empty slot? Capacity will drop by one.';
+  if(!confirm(msg))return;
   try{
     const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'removeSlot',week:DASH.week,category:key,index:index})});
     const out=await res.json();
-    if(out.ok){ toast('Slot removed'); loadDashboard(); } else toast(out.error||'Could not remove slot');
-  }catch(e){ toast('Network error'); }
+    if(out.ok){toast('Slot removed');refreshCard(key);}else toast(out.error||'Could not remove slot');
+  }catch(e){toast('Network error');}
 }
 
-/* ================================================================
- *  DRAW + OTP  (built and persisted by the backend)
- * ================================================================ */
-function cap(s){ return s? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
-function closeDraw(){ document.getElementById('drawModal').classList.remove('show'); }
+/* ======================== DRAW CONFIG POPUP ======================== */
+let _cfgKey=null, _cfgGroups=2, _cfgFinals=1;
 
-async function generateDraw(key){
-  toast('Generating draw…');
-  try{
-    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'generateDraw',week:DASH.week,category:key})});
-    const out=await res.json();
-    if(!out.ok){ toast(out.error||'Could not generate draw'); return; }
-    LAST_DRAW=out.draw; LAST_DRAW.otp=out.otp;
-    renderPreview(out.draw, out.otp, key);
-  }catch(e){ toast('Network error'); }
+function openDrawConfig(key){
+  _cfgKey=key; _cfgGroups=2; _cfgFinals=1;
+  renderCfgPopup();
+  document.getElementById('cfgModal').classList.add('show');
 }
+function closeCfg(){ document.getElementById('cfgModal').classList.remove('show'); }
 
-// Look up the day/date/time for a category from the dashboard data.
-function dayInfo(key){
-  for(const g of DAY_GROUPS){ if(g.cats.includes(key)){
-    return { day:g.day, date:DASH.dates[g.day], time:(DASH.categories[key]||{}).time||'' };
-  }}
-  return { day:'', date:'', time:(DASH.categories[key]||{}).time||'' };
-}
+function renderCfgPopup(){
+  const c=DASH.categories[_cfgKey];
+  const total=c.rows.filter(r=>String(r.player1||'').trim()!=='').length;
+  const ng=_cfgGroups;
 
-function drawNote(structure){
-  if(structure==='3group') return 'Qualifier 7 = best 3rd-placed team across the groups; Qualifier 8 = second-best. Standings rank by matches won, then net points (scored − allowed), then head-to-head.';
-  if(structure==='4group') return 'Four groups of four — the winner of each group advances straight to the semifinals.';
-  if(structure==='mixed')  return 'Mixed is randomly seeded into two groups. Top two of each group reach the semifinals, with a 3rd-place play-off before the final.';
-  return '';
-}
-
-function renderPreview(d, otp, key){
-  const di=dayInfo(key);
-  let html=`<h2>${d.label} — Draw</h2>
-    <div class="meta">${cap(di.day)} ${di.date} · ${di.time} · Week ${d.week} · ${d.structure}</div>`;
-
-  html+=`<div class="otpbox">Referee access code<b>${otp}</b>
-    <span>Read this out to the referees. Valid for this category, today only.</span></div>`;
-
-  html+=`<h3>Seeding</h3><table class="dtable"><tr><th>Seed</th><th>${d.type==='singles'?'Player':'Pair'}</th><th>${d.type==='mixed'?'Method':'Rating'}</th></tr>`;
-  d.seeds.forEach(t=>{ html+=`<tr><td class="c">${t.rank}</td><td>${t.name}</td><td class="c">${d.type==='mixed'?'Random':(t.rating?Number(t.rating).toFixed(3):'—')}</td></tr>`; });
-  html+=`</table>`;
-
-  html+=`<h3>Groups</h3><table class="dtable"><tr>${d.groups.map(g=>`<th>${g.label}</th>`).join('')}</tr>`;
-  const maxLen=Math.max.apply(null, d.groups.map(g=>g.members.length));
-  for(let i=0;i<maxLen;i++){ html+='<tr>'+d.groups.map(g=>`<td>${g.members[i]||''}</td>`).join('')+'</tr>'; }
-  html+=`</table>`;
-
-  html+=`<h3>Group Stage — Round Robin</h3><table class="dtable"><tr><th>Time</th><th>Court</th><th>Group</th><th>Match</th></tr>`;
-  d.groupStage.forEach(m=>{ html+=`<tr><td class="c">${m.time}</td><td class="c">${m.court}</td><td class="c">${m.group}</td><td>${m.a} &nbsp;vs&nbsp; ${m.b}</td></tr>`; });
-  html+=`</table>`;
-
-  html+=`<h3>Knockout Bracket</h3><table class="dtable"><tr><th>Stage</th><th>Court</th><th>Time</th><th>Match</th></tr>`;
-  d.knockout.forEach(m=>{ html+=`<tr><td>${m.stage}</td><td class="c">${m.court}</td><td class="c">${m.time}</td><td>${m.a} &nbsp;vs&nbsp; ${m.b}</td></tr>`; });
-  html+=`</table>`;
-
-  const note=drawNote(d.structure);
-  if(note) html+=`<div class="notebox">${note}</div>`;
-  html+=`<div class="notebox">Once you generate this draw the referees can begin scoring with the code above. Re-generating is blocked once any score has been entered.</div>`;
-
-  html+=`<div class="modalbar">
-      <button class="btn" onclick="closeDraw()">Close</button>
-      <button class="btn green" onclick="downloadDraw()">Download .docx</button>
+  // Build group size inputs
+  let grpHtml='<div class="grp-inputs">';
+  const letters='ABCD'.split('');
+  for(let g=0;g<ng;g++){
+    grpHtml+=`<div class="grp-inp-wrap">
+      <label>Group ${letters[g]} — players</label>
+      <input type="number" min="1" id="grp${g}" value="" placeholder="0" oninput="updateSum(${total})">
     </div>`;
+  }
+  grpHtml+='</div>';
+  grpHtml+=`<div class="sum-pill err" id="sumPill">Total: 0 / ${total}</div>`;
+
+  // Finals selector (only for 4 groups)
+  const finalsHtml=ng===4?`
+    <h3>Number of Finals</h3>
+    <div class="segg">
+      <button class="fin ${_cfgFinals===1?'sel':''}" onclick="setCfgFinals(1)">1 Final</button>
+      <button class="fin ${_cfgFinals===2?'sel':''}" onclick="setCfgFinals(2)">2 Finals</button>
+    </div>`:'';
+
+  document.getElementById('cfgSheet').innerHTML=`
+    <h2>Draw Configuration</h2>
+    <div class="msub">${c.label} · Week ${DASH.week}</div>
+    <div class="cfgtotal">Total registered players: <b>${total}</b></div>
+    <h3>Number of Groups</h3>
+    <div class="segg">
+      ${[1,2,3,4].map(n=>`<button class="${n===ng?'sel':''}" onclick="setCfgGroups(${n},${total})">${n} ${n===1?'Group':'Groups'}</button>`).join('')}
+    </div>
+    ${grpHtml}
+    ${finalsHtml}
+    <div class="mbtns">
+      <button class="btn" onclick="closeCfg()">Cancel</button>
+      <button class="btn green" id="cfgConfirm" disabled onclick="confirmDraw()">Confirm Draw</button>
+    </div>`;
+}
+
+function setCfgGroups(n,total){ _cfgGroups=n; if(n!==4)_cfgFinals=1; renderCfgPopup(); updateSum(total); }
+function setCfgFinals(n){ _cfgFinals=n;
+  document.querySelectorAll('.fin').forEach(b=>b.classList.remove('sel'));
+  event.target.classList.add('sel'); }
+
+function updateSum(total){
+  let sum=0; const ng=_cfgGroups; const letters='ABCD'.split('');
+  let allFilled=true;
+  for(let g=0;g<ng;g++){
+    const inp=document.getElementById('grp'+g);
+    if(!inp)continue;
+    const v=parseInt(inp.value)||0;
+    sum+=v;
+    if(!inp.value.trim())allFilled=false;
+    inp.className=v>0?'ok':'';
+  }
+  const pill=document.getElementById('sumPill');
+  const ok=sum===total&&allFilled;
+  if(pill){pill.className='sum-pill '+(ok?'ok':'err');pill.textContent='Total: '+sum+' / '+total;}
+  const btn=document.getElementById('cfgConfirm');
+  if(btn)btn.disabled=!ok;
+}
+
+function getGroupSizes(){
+  const ng=_cfgGroups; const sizes=[];
+  for(let g=0;g<ng;g++){
+    const inp=document.getElementById('grp'+g);
+    sizes.push(parseInt(inp&&inp.value)||0);
+  }
+  return sizes;
+}
+
+async function confirmDraw(){
+  const btn=document.getElementById('cfgConfirm');
+  btn.disabled=true; btn.textContent='Generating…';
+  const groupSizes=getGroupSizes();
+  try{
+    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({
+      action:'generateDraw',week:DASH.week,category:_cfgKey,
+      groupSizes:groupSizes,numFinals:_cfgFinals,
+    })});
+    const out=await res.json();
+    if(!out.ok){
+      toast(out.error||'Could not generate draw');
+      btn.disabled=false; btn.textContent='Confirm Draw';
+      return;
+    }
+    closeCfg();
+    LAST_DRAW=out.draw; LAST_DRAW.otp=out.otp; CURRENT_DRAW_KEY=_cfgKey;
+    renderDrawPreview(out.draw,out.otp,_cfgKey);
+  }catch(e){ toast('Network error'); btn.disabled=false; btn.textContent='Confirm Draw'; }
+}
+
+/* ======================== DRAW PREVIEW ======================== */
+function renderDrawPreview(d,otp,key){
+  const c=DASH.categories[key];
+  let html=`<h2>${d.label} — Draw Preview</h2>
+    <div class="meta">Week ${d.week} · ${d.structure} · ${d.numGroups} group(s) · ${d.numFinals} final(s)</div>
+    <div class="otp-banner">Referee access code<b>${otp}</b>
+      <span>Share this with referees. Valid for this category all week.</span></div>`;
+
+  // Seeding
+  html+=`<h3>Seeding</h3><table class="dtable"><tr><th>Seed</th><th>${c.type==='singles'?'Player':'Pair'}</th><th>${c.type==='mixed'?'Method':'Rating'}</th></tr>`;
+  d.seeds.forEach(t=>{html+=`<tr><td class="c">${t.rank}</td><td>${t.name}</td><td class="c">${c.type==='mixed'?'Random':(t.rating?Number(t.rating).toFixed(3):'—')}</td></tr>`;});
+  html+=`</table>`;
+
+  // Groups
+  html+=`<h3>Groups</h3><table class="dtable"><tr>${d.groups.map(g=>`<th>${g.label}</th>`).join('')}</tr>`;
+  const maxLen=Math.max(...d.groups.map(g=>g.members.length));
+  for(let i=0;i<maxLen;i++) html+=`<tr>${d.groups.map(g=>`<td>${g.members[i]||''}</td>`).join('')}</tr>`;
+  html+=`</table>`;
+
+  // Group stage
+  html+=`<h3>Group Stage — Round Robin</h3><table class="dtable"><tr><th>Match</th><th>Court</th><th>Group</th><th>Team A</th><th>vs</th><th>Team B</th></tr>`;
+  d.groupStage.forEach(m=>{html+=`<tr><td class="c">${m.id}</td><td class="c">${m.court}</td><td class="c">${m.group}</td><td>${m.a}</td><td class="c" style="color:#888">vs</td><td>${m.b}</td></tr>`;});
+  html+=`</table>`;
+
+  // Knockout
+  html+=`<h3>Knockout Bracket</h3><table class="dtable"><tr><th>Stage</th><th>Court</th><th>Match</th></tr>`;
+  d.knockout.forEach(m=>{html+=`<tr><td>${m.stage}</td><td class="c">${m.court}</td><td>${m.a} vs ${m.b}</td></tr>`;});
+  html+=`</table>`;
+
+  // Note
+  const notes={
+    '3group':'Qualifier 7 = best 3rd-placed team across groups. Qualifier 8 = second-best. Ranked by wins then net points.',
+    '1group':'Top 4 advance. SF1 winner goes direct to Final. SF2 winner plays SF1 loser — winner advances to Final.',
+    '4group-2finals':'Two simultaneous Finals — no semifinal round.',
+  };
+  if(notes[d.structure]) html+=`<div class="notebox">${notes[d.structure]}</div>`;
+  html+=`<div class="notebox">Times are auto-calculated at 15-minute intervals from the category start time. Adjust on the night as needed.</div>`;
+
+  html+=`<div class="mbtns">
+    <button class="btn" onclick="closeDrawPreview()">Close</button>
+    <button class="btn green" onclick="downloadDraw()">Download .docx</button>
+  </div>`;
   document.getElementById('drawSheet').innerHTML=html;
   document.getElementById('drawModal').classList.add('show');
 }
+function closeDrawPreview(){ document.getElementById('drawModal').classList.remove('show'); }
 
-/* ---------- .docx download ---------- */
+/* ======================== STYLED .docx DOWNLOAD ======================== */
 function downloadDraw(){
   const d=LAST_DRAW; if(!d) return;
-  if(typeof docx==='undefined'){ toast('Draw library still loading — try again in a moment.'); return; }
-  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, HeadingLevel } = docx;
-  const cell=(t,bold,fill)=> new TableCell({ shading: fill?{fill:fill}:undefined,
-    children:[new Paragraph({children:[new TextRun({text:String(t),bold:!!bold})]})] });
-  const mkTable=(headers,rowsArr)=> new Table({ width:{size:100,type:WidthType.PERCENTAGE},
-    rows:[ new TableRow({children:headers.map(h=>cell(h,true,'EEF3ED'))}),
-           ...rowsArr.map(r=> new TableRow({children:r.map(x=>cell(x,false))})) ] });
-  const H=(t,lvl)=> new Paragraph({text:t, heading:lvl, spacing:{before:240,after:120}});
-  const P=(t)=> new Paragraph({children:[new TextRun({text:t})], spacing:{after:120}});
+  if(typeof docx==='undefined'){toast('Draw library loading — try again in a moment.');return;}
+  const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,HeadingLevel,AlignmentType,ShadingType,BorderStyle} = docx;
+
+  const DARK='1A2744', WHITE='FFFFFF', LIME='8BB800', PINK='FF2E9A', CYAN='12CCCC', ORANGE='FF8F00';
+  const categoryColor = (type,accent) => ({lime:LIME,pink:PINK,cyan:CYAN,orange:ORANGE}[accent]||LIME);
+  const catColor = categoryColor(d.type, DASH.categories[CURRENT_DRAW_KEY]&&DASH.categories[CURRENT_DRAW_KEY].accent||'lime');
+
+  // Helper builders
+  const shading=(color)=>({type:ShadingType.CLEAR,color:'auto',fill:color});
+  const borders=(color)=>({top:{style:BorderStyle.SINGLE,size:6,color:color},bottom:{style:BorderStyle.SINGLE,size:6,color:color},left:{style:BorderStyle.SINGLE,size:6,color:color},right:{style:BorderStyle.SINGLE,size:6,color:color}});
+  const cell=(text,opts={})=>new TableCell({
+    shading:opts.bg?shading(opts.bg):undefined,
+    borders:opts.border?borders(opts.border||'CCCCCC'):undefined,
+    width:opts.w?{size:opts.w,type:WidthType.PERCENTAGE}:undefined,
+    children:[new Paragraph({alignment:opts.center?AlignmentType.CENTER:AlignmentType.LEFT,
+      children:[new TextRun({text:String(text||''),bold:!!opts.bold,color:opts.color||'000000',size:opts.size||20})]})]
+  });
+  const row=(...cells)=>new TableRow({children:cells});
+  const P=(text,opts={})=>new Paragraph({alignment:opts.center?AlignmentType.CENTER:AlignmentType.LEFT,
+    spacing:{before:opts.before||0,after:opts.after||100},
+    children:[new TextRun({text:String(text||''),bold:!!opts.bold,size:opts.size||20,color:opts.color||'000000',font:opts.font||'Calibri'})]});
+  const spacer=()=>new Paragraph({text:'',spacing:{after:80}});
 
   const kids=[];
-  kids.push(new Paragraph({children:[new TextRun({text:d.label+' — Draw', bold:true, size:32})]}));
-  kids.push(P('Week '+d.week+'  ·  '+d.structure+'  ·  Referee code: '+(d.otp||'')));
 
-  kids.push(H('Seeding', HeadingLevel.HEADING_2));
-  kids.push(mkTable(['Seed', d.type==='singles'?'Player':'Pair', d.type==='mixed'?'Method':'Rating'],
-    d.seeds.map(t=>[String(t.rank), t.name, d.type==='mixed'?'Random':(t.rating?Number(t.rating).toFixed(3):'—')])));
+  // === COVER PAGE ===
+  // Dark header bar simulation
+  kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[row(
+    cell('PickleBee by 71\nDUPR Night Draw System\nDesigned & Developed by Z2H x Real Solutions',{bg:DARK,color:WHITE,bold:true,size:22,w:75}),
+    cell('Z2H x REALSOLUTIONS',{bg:CYAN,color:DARK,bold:true,center:true,size:20,w:25})
+  )]}));
+  kids.push(spacer());
+  kids.push(P(`DUPR Night ${d.label} — Draw`,{bold:true,size:36,center:true}));
+  kids.push(P(new Date().toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),{center:true,size:20,color:'666666'}));
+  kids.push(spacer());
 
-  kids.push(H('Groups', HeadingLevel.HEADING_2));
-  const maxLen=Math.max.apply(null, d.groups.map(g=>g.members.length));
-  const grows=[]; for(let i=0;i<maxLen;i++) grows.push(d.groups.map(g=> g.members[i]||''));
-  kids.push(mkTable(d.groups.map(g=>g.label), grows));
+  // Mode + Total pills
+  kids.push(new Table({width:{size:60,type:WidthType.PERCENTAGE},rows:[row(
+    cell('Mode: '+(d.type.charAt(0).toUpperCase()+d.type.slice(1)),{bg:'F0F0F0',size:20}),
+    cell('Total: '+d.seeds.length+' Players',{bg:'F0F0F0',size:20}),
+    cell('Structure: '+d.structure,{bg:'F0F0F0',size:20}),
+  )]}));
+  kids.push(spacer());
 
-  kids.push(H('Group Stage — Round Robin', HeadingLevel.HEADING_2));
-  kids.push(mkTable(['Time','Court','Group','Match'],
-    d.groupStage.map(m=>[m.time,m.court,m.group,m.a+'  vs  '+m.b])));
+  // OTP banner
+  kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[row(
+    cell('REFEREE ACCESS CODE — OTP: '+d.otp+'\nShare with referees. Valid for the entire week.',{bg:catColor,color:WHITE,bold:true,size:24,center:true})
+  )]}));
+  kids.push(spacer());
 
-  kids.push(H('Knockout Bracket', HeadingLevel.HEADING_2));
-  kids.push(mkTable(['Stage','Court','Time','Match'],
-    d.knockout.map(m=>[m.stage,m.court,m.time,m.a+'  vs  '+m.b])));
+  // Summary per group
+  kids.push(P('Groups Summary',{bold:true,size:24}));
+  d.groups.forEach(g=>{
+    const matchCount=d.groupStage.filter(m=>m.group===g.label).length;
+    kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+      row(cell('Group '+g.label+' — '+g.members.length+' participants · '+matchCount+' round-robin matches',{bg:catColor,color:WHITE,bold:true,size:20}))
+    ]}));
+    kids.push(spacer());
+  });
 
-  const note=drawNote(d.structure);
-  if(note){ kids.push(H('Notes', HeadingLevel.HEADING_2)); kids.push(P(note)); }
+  // === PER GROUP PAGES ===
+  d.groups.forEach((g,gi)=>{
+    kids.push(new Paragraph({pageBreakBefore:gi>0,text:'',spacing:{after:80}}));
+
+    // Category header
+    kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+      row(cell(d.label+' — Group '+g.label,{bg:DARK,color:WHITE,bold:true,size:26}))
+    ]}));
+    kids.push(spacer());
+
+    // Group court section
+    const courtLabel=g.label==='A'||g.label==='B'?'Court N':'Court B';
+    kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+      row(cell(courtLabel+' · '+g.members.length+' players',{bg:catColor,color:WHITE,bold:true,size:22}))
+    ]}));
+    kids.push(P('PARTICIPANTS',{bold:true,color:catColor,size:18,before:120}));
+
+    g.members.forEach((name,mi)=>{
+      const seed=d.seeds.find(s=>s.name===name);
+      const rating=seed&&seed.rating?Number(seed.rating).toFixed(3):'';
+      kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[row(
+        cell((mi+1)+'.  '+name,{size:20}),
+        cell(rating?'DUPR '+rating:'',{size:20,color:catColor,bold:true,center:true,w:20})
+      )]}));
+    });
+
+    // Round robin schedule
+    const groupMatches=d.groupStage.filter(m=>m.group===g.label);
+    kids.push(spacer());
+    kids.push(P('ROUND ROBIN SCHEDULE · '+groupMatches.length+' MATCHES',{bold:true,color:catColor,size:18}));
+    groupMatches.forEach((m,mi)=>{
+      kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[row(
+        cell(m.id,{bg:catColor,color:WHITE,bold:true,size:16,center:true,w:8}),
+        cell(m.a,{size:18,w:40}),
+        cell('vs',{size:16,color:catColor,center:true,w:12}),
+        cell(m.b,{size:18,w:40})
+      )]}));
+    });
+
+    // Blank standings table
+    kids.push(spacer());
+    kids.push(P('STANDINGS (FILL IN DURING PLAY)',{bold:true,color:catColor,size:18}));
+    kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+      row(
+        cell('Player / Pair',{bg:DARK,color:WHITE,bold:true,size:18,w:55}),
+        cell('W',{bg:DARK,color:WHITE,bold:true,center:true,size:18,w:12}),
+        cell('L',{bg:DARK,color:WHITE,bold:true,center:true,size:18,w:11}),
+        cell('Pts',{bg:DARK,color:WHITE,bold:true,center:true,size:18,w:11}),
+        cell('Rank',{bg:DARK,color:WHITE,bold:true,center:true,size:18,w:11}),
+      ),
+      ...g.members.map(name=>row(
+        cell(name,{size:18}),
+        cell('___',{center:true,color:'AAAAAA',size:16}),
+        cell('___',{center:true,color:'AAAAAA',size:16}),
+        cell('___',{center:true,color:'AAAAAA',size:16}),
+        cell('___',{center:true,color:'AAAAAA',size:16}),
+      ))
+    ]}));
+  });
+
+  // === KNOCKOUT PAGE ===
+  kids.push(new Paragraph({pageBreakBefore:true,text:'',spacing:{after:80}}));
+  kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
+    row(cell('KNOCKOUT STAGE',{bg:DARK,color:WHITE,bold:true,size:28,center:true}))
+  ]}));
+  kids.push(spacer());
+
+  // Group knockout by stage
+  const stages=[...new Set(d.knockout.map(m=>m.stage))];
+  stages.forEach(stage=>{
+    const stageMoves=d.knockout.filter(m=>m.stage===stage);
+    const stageLabel=stage==='final'?'FINAL BEE OF THE COURT':
+      stage==='final1'?'FINAL 1':stage==='final2'?'FINAL 2':
+      stage.toUpperCase().replace('QF','QUARTERFINAL ').replace('SF','SEMI FINAL ').replace('CON','CONSOLATION');
+    kids.push(P(stageLabel,{bold:true,size:22,before:160}));
+    stageMoves.forEach(m=>{
+      kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[row(
+        cell(m.a,{size:18,w:40}),
+        cell('vs',{size:16,color:catColor,center:true,w:20}),
+        cell(m.b,{size:18,w:40}),
+      )]}));
+    });
+    kids.push(spacer());
+  });
+
+  // Footer note
+  kids.push(P('PickleBee by 71 · DUPR Night Draw System · Designed & Developed by Z2H x RealSolutions',{center:true,size:16,color:'999999'}));
 
   const doc=new Document({sections:[{children:kids}]});
   Packer.toBlob(doc).then(blob=>{
@@ -415,10 +695,10 @@ function downloadDraw(){
     a.download=(d.label.replace(/[^a-z0-9]+/gi,'_'))+'_Week'+d.week+'_Draw.docx';
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     toast('Draw downloaded');
-  }).catch(()=> toast('Could not build the .docx — try again.'));
+  }).catch(()=>toast('Could not build the .docx — try again.'));
 }
 
-/* ---------- toast ---------- */
+/* ======================== toast ======================== */
 let toastT;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1900); }
