@@ -117,6 +117,7 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 .segg button.sel{background:var(--ink);color:#fff;box-shadow:var(--clay-in);}
 .segg button.fin{background:var(--surface-2);}
 .segg button.fin.sel{background:var(--cyan);color:#fff;}
+.seed-hint{display:block;font-size:.68rem;font-weight:600;opacity:.75;margin-top:2px;}
 .segg button:disabled{opacity:.4;cursor:not-allowed;}
 .grp-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:12px;}
 .grp-inp-wrap label{display:block;font-weight:800;font-size:.82rem;margin-bottom:6px;color:var(--muted);}
@@ -390,10 +391,10 @@ async function removeSlot(key,index,hasData){
 }
 
 /* ======================== DRAW CONFIG POPUP ======================== */
-let _cfgKey=null, _cfgGroups=2, _cfgFinals=1;
+let _cfgKey=null, _cfgGroups=2, _cfgFinals=1, _cfgSeedMethod='snake';
 
 function openDrawConfig(key){
-  _cfgKey=key; _cfgGroups=2; _cfgFinals=1;
+  _cfgKey=key; _cfgGroups=2; _cfgFinals=1; _cfgSeedMethod='snake';
   renderCfgPopup();
   document.getElementById('cfgModal').classList.add('show');
 }
@@ -424,6 +425,14 @@ function renderCfgPopup(){
       <button class="fin ${_cfgFinals===2?'sel':''}" onclick="setCfgFinals(2)">2 Finals</button>
     </div>`:'';
 
+  // Seeding method toggle — irrelevant for Mixed Bee (already random), so hidden there.
+  const seedHtml=c.type==='mixed'?'':`
+    <h3>Group Seeding</h3>
+    <div class="segg" id="seedToggle">
+      <button class="fin ${_cfgSeedMethod==='snake'?'sel':''}" onclick="setCfgSeedMethod('snake')">Snake <span class="seed-hint">balanced groups</span></button>
+      <button class="fin ${_cfgSeedMethod==='cyclic'?'sel':''}" onclick="setCfgSeedMethod('cyclic')">Cyclic <span class="seed-hint">Group of Death</span></button>
+    </div>`;
+
   document.getElementById('cfgSheet').innerHTML=`
     <h2>Draw Configuration</h2>
     <div class="msub">${c.label} · Week ${DASH.week}</div>
@@ -434,6 +443,7 @@ function renderCfgPopup(){
     </div>
     ${grpHtml}
     ${finalsHtml}
+    ${seedHtml}
     <div class="mbtns">
       <button class="btn" onclick="closeCfg()">Cancel</button>
       <button class="btn green" id="cfgConfirm" disabled onclick="confirmDraw()">Confirm Draw</button>
@@ -444,6 +454,10 @@ function setCfgGroups(n,total){ _cfgGroups=n; if(n!==4)_cfgFinals=1; renderCfgPo
 function setCfgFinals(n){ _cfgFinals=n;
   document.querySelectorAll('.fin').forEach(b=>b.classList.remove('sel'));
   event.target.classList.add('sel'); }
+function setCfgSeedMethod(m){ _cfgSeedMethod=m;
+  document.querySelectorAll('#seedToggle .fin').forEach(b=>b.classList.remove('sel'));
+  event.target.closest('.fin').classList.add('sel');
+}
 
 function updateSum(total){
   let sum=0; const ng=_cfgGroups; const letters='ABCD'.split('');
@@ -479,7 +493,7 @@ async function confirmDraw(){
   try{
     const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({
       action:'previewDraw',week:DASH.week,category:_cfgKey,
-      groupSizes:groupSizes,numFinals:_cfgFinals,
+      groupSizes:groupSizes,numFinals:_cfgFinals,seedMethod:_cfgSeedMethod,
     })});
     const out=await res.json();
     if(!out.ok){
@@ -497,7 +511,7 @@ async function confirmDraw(){
 function renderDrawPreview(d,otp,key){
   const c=DASH.categories[key];
   let html=`<h2>${d.label} - Draw Preview</h2>
-    <div class="meta">Week ${d.week} · ${d.structure} · ${d.numGroups} group(s) · ${d.numFinals} final(s)</div>
+    <div class="meta">Week ${d.week} · ${d.structure} · ${d.numGroups} group(s) · ${d.numFinals} final(s)${d.seedMethod?' · '+d.seedMethod.charAt(0).toUpperCase()+d.seedMethod.slice(1)+' seeding':''}</div>
     <div class="otp-banner">Referee access code<b>${otp}</b>
       <span>Share this with referees. Valid for this category all week.</span></div>
     <div class="notebox" style="border-left:4px solid var(--cyan);">
@@ -617,6 +631,7 @@ function buildAndDownloadDocx(d){
     cell('Mode: '+(d.type.charAt(0).toUpperCase()+d.type.slice(1)),{bg:'F0F0F0',size:20}),
     cell('Total: '+d.seeds.length+' Players',{bg:'F0F0F0',size:20}),
     cell('Structure: '+d.structure,{bg:'F0F0F0',size:20}),
+    cell(d.seedMethod?('Seeding: '+d.seedMethod.charAt(0).toUpperCase()+d.seedMethod.slice(1)):'',{bg:'F0F0F0',size:20}),
   )]}));
   kids.push(spacer());
 
