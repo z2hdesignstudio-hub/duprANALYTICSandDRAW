@@ -429,8 +429,8 @@ function renderCfgPopup(){
   const seedHtml=c.type==='mixed'?'':`
     <h3>Group Seeding</h3>
     <div class="segg" id="seedToggle">
-      <button class="fin ${_cfgSeedMethod==='snake'?'sel':''}" onclick="setCfgSeedMethod('snake')">Snake <span class="seed-hint">balanced groups</span></button>
-      <button class="fin ${_cfgSeedMethod==='cyclic'?'sel':''}" onclick="setCfgSeedMethod('cyclic')">Cyclic <span class="seed-hint">Group of Death</span></button>
+      <button class="fin ${_cfgSeedMethod==='snake'?'sel':''}" onclick="setCfgSeedMethod('snake')">Snake <span class="seed-hint">division</span></button>
+      <button class="fin ${_cfgSeedMethod==='cyclic'?'sel':''}" onclick="setCfgSeedMethod('cyclic')">Cyclic <span class="seed-hint">division</span></button>
     </div>`;
 
   document.getElementById('cfgSheet').innerHTML=`
