@@ -478,7 +478,7 @@ async function confirmDraw(){
   const groupSizes=getGroupSizes();
   try{
     const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({
-      action:'generateDraw',week:DASH.week,category:_cfgKey,
+      action:'previewDraw',week:DASH.week,category:_cfgKey,
       groupSizes:groupSizes,numFinals:_cfgFinals,
     })});
     const out=await res.json();
@@ -499,7 +499,12 @@ function renderDrawPreview(d,otp,key){
   let html=`<h2>${d.label} - Draw Preview</h2>
     <div class="meta">Week ${d.week} · ${d.structure} · ${d.numGroups} group(s) · ${d.numFinals} final(s)</div>
     <div class="otp-banner">Referee access code<b>${otp}</b>
-      <span>Share this with referees. Valid for this category all week.</span></div>`;
+      <span>Share this with referees. Valid for this category all week.</span></div>
+    <div class="notebox" style="border-left:4px solid var(--cyan);">
+      This is a preview only — referees will keep seeing the previous committed draw
+      (or nothing, if none exists yet) until you press <b>Download .docx</b> below.
+      You can adjust the group config and re-preview as many times as you like before then.
+    </div>`;
 
   // Seeding
   html+=`<h3>Seeding</h3><table class="dtable"><tr><th>Seed</th><th>${c.type==='singles'?'Player':'Pair'}</th><th>${c.type==='mixed'?'Method':'Rating'}</th></tr>`;
@@ -533,7 +538,7 @@ function renderDrawPreview(d,otp,key){
 
   html+=`<div class="mbtns">
     <button class="btn" onclick="closeDrawPreview()">Close</button>
-    <button class="btn green" onclick="downloadDraw()">Download .docx</button>
+    <button class="btn green" id="downloadBtn" onclick="downloadDraw()">Download .docx</button>
   </div>`;
   document.getElementById('drawSheet').innerHTML=html;
   document.getElementById('drawModal').classList.add('show');
@@ -541,8 +546,36 @@ function renderDrawPreview(d,otp,key){
 function closeDrawPreview(){ document.getElementById('drawModal').classList.remove('show'); }
 
 /* ======================== STYLED .docx DOWNLOAD ======================== */
-function downloadDraw(){
+async function downloadDraw(){
   const d=LAST_DRAW; if(!d) return;
+  const btn=document.getElementById('downloadBtn');
+
+  // Commit the exact previewed draft to live BEFORE building the file.
+  // This is the one moment referees' view actually changes — guaranteeing
+  // the downloaded .docx and what Website 3 shows are always identical.
+  if(btn){ btn.disabled=true; btn.textContent='Committing draw…'; }
+  try{
+    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({
+      action:'commitDraw',week:DASH.week,category:CURRENT_DRAW_KEY,
+    })});
+    const out=await res.json();
+    if(!out.ok){
+      toast(out.error||'Could not commit this draw');
+      if(btn){ btn.disabled=false; btn.textContent='Download .docx'; }
+      return; // do NOT download — nothing changed for referees either
+    }
+  }catch(e){
+    toast('Network error — draw was not committed');
+    if(btn){ btn.disabled=false; btn.textContent='Download .docx'; }
+    return;
+  }
+  if(btn){ btn.textContent='Preparing document…'; }
+
+  await buildAndDownloadDocx(d);
+  if(btn){ btn.disabled=false; btn.textContent='Download .docx'; }
+}
+
+function buildAndDownloadDocx(d){
   if(typeof docx==='undefined'){toast('Draw library loading — try again in a moment.');return;}
   const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,HeadingLevel,AlignmentType,ShadingType,BorderStyle} = docx;
 
@@ -695,7 +728,7 @@ function downloadDraw(){
   kids.push(P('PickleBee by 71 · DUPR Night Draw System · Designed & Developed by Z2H x RealSolutions',{center:true,size:16,color:'999999'}));
 
   const doc=new Document({sections:[{children:kids}]});
-  Packer.toBlob(doc).then(blob=>{
+  return Packer.toBlob(doc).then(blob=>{
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url;
     a.download=(d.label.replace(/[^a-z0-9]+/gi,'_'))+'_Week'+d.week+'_Draw.docx';
