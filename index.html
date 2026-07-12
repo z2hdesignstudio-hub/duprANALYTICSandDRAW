@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 :root{
   --bg:#e9efe9;--surface:#f4f8f3;--surface-2:#eef3ed;
@@ -732,22 +733,30 @@ function renderDrawPreview(d,otp,key){
 
   html+=`<div class="mbtns">
     <button class="btn" onclick="closeDrawPreview()">Close</button>
-    <button class="btn green" id="downloadBtn" onclick="downloadDraw()">Download .docx</button>
+    <button class="btn green" id="downloadDocxBtn" onclick="downloadDraw('docx')">Download .docx</button>
+    <button class="btn green" id="downloadXlsxBtn" onclick="downloadDraw('xlsx')">Download .xlsx</button>
   </div>`;
   document.getElementById('drawSheet').innerHTML=html;
   document.getElementById('drawModal').classList.add('show');
 }
 function closeDrawPreview(){ document.getElementById('drawModal').classList.remove('show'); }
 
-/* ======================== STYLED .docx DOWNLOAD ======================== */
-async function downloadDraw(){
+/* ======================== STYLED DOWNLOAD — .docx or .xlsx ======================== */
+async function downloadDraw(format){
   const d=LAST_DRAW; if(!d) return;
-  const btn=document.getElementById('downloadBtn');
+  const docxBtn=document.getElementById('downloadDocxBtn');
+  const xlsxBtn=document.getElementById('downloadXlsxBtn');
+  const activeBtn=format==='xlsx'?xlsxBtn:docxBtn;
+  const otherBtn=format==='xlsx'?docxBtn:xlsxBtn;
 
   // Commit the exact previewed draft to live BEFORE building the file.
   // This is the one moment referees' view actually changes — guaranteeing
-  // the downloaded .docx and what Website 3 shows are always identical.
-  if(btn){ btn.disabled=true; btn.textContent='Committing draw…'; }
+  // the downloaded file and what Website 3 shows are always identical.
+  // (Safe to commit again even if already committed this session — it's
+  // an idempotent overwrite with the same draft data.)
+  if(activeBtn){ activeBtn.disabled=true; activeBtn.textContent='Committing draw…'; }
+  if(otherBtn) otherBtn.disabled=true;
+  let drawSheetUrl=null;
   try{
     const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({
       action:'commitDraw',week:DASH.week,category:CURRENT_DRAW_KEY,
@@ -755,18 +764,30 @@ async function downloadDraw(){
     const out=await res.json();
     if(!out.ok){
       toast(out.error||'Could not commit this draw');
-      if(btn){ btn.disabled=false; btn.textContent='Download .docx'; }
+      resetDownloadBtns();
       return; // do NOT download — nothing changed for referees either
     }
+    drawSheetUrl=out.drawSheetUrl;
   }catch(e){
     toast('Network error — draw was not committed');
-    if(btn){ btn.disabled=false; btn.textContent='Download .docx'; }
+    resetDownloadBtns();
     return;
   }
-  if(btn){ btn.textContent='Preparing document…'; }
+  if(activeBtn){ activeBtn.textContent='Preparing document…'; }
 
-  await buildAndDownloadDocx(d);
-  if(btn){ btn.disabled=false; btn.textContent='Download .docx'; }
+  if(format==='xlsx') await buildAndDownloadXlsx(d);
+  else await buildAndDownloadDocx(d);
+
+  resetDownloadBtns();
+  if(drawSheetUrl){
+    toast('Downloaded — this week\'s Draws sheet was also updated');
+  }
+}
+function resetDownloadBtns(){
+  const docxBtn=document.getElementById('downloadDocxBtn');
+  const xlsxBtn=document.getElementById('downloadXlsxBtn');
+  if(docxBtn){ docxBtn.disabled=false; docxBtn.textContent='Download .docx'; }
+  if(xlsxBtn){ xlsxBtn.disabled=false; xlsxBtn.textContent='Download .xlsx'; }
 }
 
 function buildAndDownloadDocx(d){
@@ -930,6 +951,113 @@ function buildAndDownloadDocx(d){
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     toast('Draw downloaded');
   }).catch(()=>toast('Could not build the .docx — try again.'));
+}
+
+/* ======================== STYLED .xlsx DOWNLOAD ======================== */
+// Colors match the separate live Draws Google Sheet for visual consistency
+// between the two Part-B outputs.
+const XLSX_CYAN='00FFFF', XLSX_GREEN='00B050', XLSX_YELLOW='FFFF00', XLSX_RED='FF0000';
+
+// Same "(QF1)", "(Semi 1)", "(Final)" convention as the live Draws sheet.
+function xlsxStageLabel(m){
+  if(m.stage==='group') return '';
+  const map={qf:'QF',sf:'Semi',final:'Final',final1:'Final 1',final2:'Final 2',consolation:'Consolation'};
+  const base=map[m.stage]||m.stage;
+  if(m.stage==='qf'||m.stage==='sf'){
+    const num=(m.id.match(/\d+$/)||[''])[0];
+    return '('+base+' '+num+') ';
+  }
+  return '('+base+') ';
+}
+
+const XLSX_PROMO_NOTES={
+  '1group':'Top 4 from the round robin proceed to the semis and final!',
+  '2group':'Rank 1 and Rank 2 from each group will proceed to semis and finals!',
+  '3group':'Table Rank 1, Rank 2, Qualifier 7 & Qualifier 8 will proceed to semis and finals.',
+  '4group-1final':'Rank 1 from each group will proceed to semis and finals!',
+  '4group-1final-qf':'Rank 1 and Rank 2 from each group will proceed to the Quarterfinals!',
+  '4group-2finals':'Rank 1 from each group will proceed straight to the Finals!',
+};
+
+async function buildAndDownloadXlsx(d){
+  if(typeof XLSX==='undefined'){ toast('Spreadsheet library loading — try again in a moment.'); return; }
+  const isSingles=(d.type==='singles');
+  const headerColor=isSingles?XLSX_CYAN:XLSX_GREEN;
+
+  const fill=(hex)=>({fgColor:{rgb:hex}});
+  const cellS=(v,style)=>({v:v==null?'':v, t:(typeof v==='number'?'n':'s'), s:style||{}});
+  const boldCenter=(hex)=>({font:{bold:true},fill:hex?fill(hex):undefined,alignment:{horizontal:'center',vertical:'center'}});
+  const plain=()=>({alignment:{vertical:'center'}});
+  const merges=[];
+  const mergeRow=(r,c1,c2)=>merges.push({s:{r,c:c1},e:{r,c:c2}});
+
+  const wb=XLSX.utils.book_new();
+
+  // ── Sheet 1: Groups (standings, blank score/rank for fill-in) ──
+  {
+    const rows=[]; const localMerges=[];
+    d.groups.forEach(g=>{
+      const groupMatchesForTime=d.groupStage.find(m=>m.group===g.label);
+      const timeLabel=groupMatchesForTime?groupMatchesForTime.time:'';
+      const r0=rows.length;
+      rows.push([cellS(g.label+' - '+timeLabel,boldCenter(XLSX_YELLOW)),cellS('',boldCenter(XLSX_YELLOW)),cellS('',boldCenter(XLSX_YELLOW))]);
+      localMerges.push({s:{r:r0,c:0},e:{r:r0,c:2}});
+      rows.push([
+        cellS(isSingles?'Singles players':'Doubles Team',boldCenter(headerColor)),
+        cellS('Total Score Points',boldCenter(headerColor)),
+        cellS('Rank',boldCenter(headerColor)),
+      ]);
+      g.members.forEach(name=>rows.push([cellS(name,plain()),cellS('',plain()),cellS('',plain())]));
+      rows.push([cellS('',plain()),cellS('',plain()),cellS('',plain())]); // blank separator
+    });
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!merges']=localMerges;
+    ws['!cols']=[{wch:28},{wch:20},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,ws,'Groups');
+  }
+
+  // ── One sheet per court in use: schedule table, continuous into knockout ──
+  const courtsUsed=[...new Set(d.groupStage.map(m=>m.court).concat(d.knockout.map(m=>m.court)))];
+  courtsUsed.forEach(court=>{
+    const rows=[]; const localMerges=[];
+    const r0=rows.length;
+    rows.push([cellS(court,boldCenter(headerColor)),cellS('',boldCenter(headerColor)),cellS('',boldCenter(headerColor)),cellS('',boldCenter(headerColor)),cellS('',boldCenter(headerColor)),cellS('',boldCenter(headerColor))]);
+    localMerges.push({s:{r:r0,c:0},e:{r:r0,c:5}});
+    rows.push(['Game No','Time','Player 1','Score','Player 2','Score'].map(h=>cellS(h,boldCenter())));
+
+    let gameNo=1, lastGroup=null;
+    d.groupStage.filter(m=>m.court===court).forEach(m=>{
+      if(m.group!==lastGroup){
+        const rg=rows.length;
+        rows.push([cellS(m.group+' - '+m.time,boldCenter(XLSX_YELLOW)),cellS('',boldCenter(XLSX_YELLOW)),cellS('',boldCenter(XLSX_YELLOW)),cellS('',boldCenter(XLSX_YELLOW)),cellS('',boldCenter(XLSX_YELLOW)),cellS('',boldCenter(XLSX_YELLOW))]);
+        localMerges.push({s:{r:rg,c:0},e:{r:rg,c:5}});
+        lastGroup=m.group;
+      }
+      rows.push([cellS(gameNo,plain()),cellS(m.time,plain()),cellS(m.a,plain()),cellS('',plain()),cellS(m.b,plain()),cellS('',plain())]);
+      gameNo++;
+    });
+    d.knockout.filter(m=>m.court===court).forEach(m=>{
+      const label=xlsxStageLabel(m);
+      rows.push([cellS(gameNo,plain()),cellS(m.time,plain()),cellS(label+m.a,plain()),cellS('',plain()),cellS(label+m.b,plain()),cellS('',plain())]);
+      gameNo++;
+    });
+
+    rows.push([cellS('',plain()),cellS('',plain()),cellS('',plain()),cellS('',plain()),cellS('',plain()),cellS('',plain())]);
+    const rNote=rows.length;
+    const noteText=XLSX_PROMO_NOTES[d.structure]||'Winners advance to the next round!';
+    rows.push([cellS(noteText,{font:{bold:true,color:{rgb:XLSX_RED}}}),cellS('',{}),cellS('',{}),cellS('',{}),cellS('',{}),cellS('',{})]);
+    localMerges.push({s:{r:rNote,c:0},e:{r:rNote,c:5}});
+
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!merges']=localMerges;
+    ws['!cols']=[{wch:10},{wch:12},{wch:28},{wch:10},{wch:28},{wch:10}];
+    XLSX.utils.book_append_sheet(wb,ws,court);
+  });
+
+  try{
+    XLSX.writeFile(wb,(d.label.replace(/[^a-z0-9]+/gi,'_'))+'_Week'+d.week+'_Draw.xlsx');
+    toast('Draw downloaded');
+  }catch(e){ toast('Could not build the .xlsx — try again.'); }
 }
 
 /* ======================== toast ======================== */
