@@ -424,10 +424,10 @@ async function removeSlot(key,index,hasData){
 }
 
 /* ======================== DRAW CONFIG POPUP ======================== */
-let _cfgKey=null, _cfgGroups=2, _cfgFinals=1, _cfgSeedMethod='snake';
+let _cfgKey=null, _cfgGroups=2, _cfgFinals=1, _cfgSeedMethod='snake', _cfgHasQF=false;
 
 function openDrawConfig(key){
-  _cfgKey=key; _cfgGroups=2; _cfgFinals=1; _cfgSeedMethod='snake';
+  _cfgKey=key; _cfgGroups=2; _cfgFinals=1; _cfgSeedMethod='snake'; _cfgHasQF=false;
   renderCfgPopup();
   document.getElementById('cfgModal').classList.add('show');
 }
@@ -453,9 +453,19 @@ function renderCfgPopup(){
   // Finals selector (only for 4 groups)
   const finalsHtml=ng===4?`
     <h3>Number of Finals</h3>
-    <div class="segg">
+    <div class="segg" id="finalsToggle">
       <button class="fin ${_cfgFinals===1?'sel':''}" onclick="setCfgFinals(1)">1 Final</button>
       <button class="fin ${_cfgFinals===2?'sel':''}" onclick="setCfgFinals(2)">2 Finals</button>
+    </div>`:'';
+
+  // Quarterfinals option — only meaningful for 4 groups + 1 Final.
+  const qfHtml=ng===4?`
+    <div id="qfToggleWrap" style="display:${_cfgFinals===1?'block':'none'}">
+      <h3>Include Quarterfinals?</h3>
+      <div class="segg" id="qfToggle">
+        <button class="fin ${!_cfgHasQF?'sel':''}" onclick="setCfgHasQF(false)">No</button>
+        <button class="fin ${_cfgHasQF?'sel':''}" onclick="setCfgHasQF(true)">Yes</button>
+      </div>
     </div>`:'';
 
   // Seeding method toggle — irrelevant for Mixed Bee (already random), so hidden there.
@@ -476,6 +486,7 @@ function renderCfgPopup(){
     </div>
     ${grpHtml}
     ${finalsHtml}
+    ${qfHtml}
     ${seedHtml}
     <div class="mbtns">
       <button class="btn" onclick="closeCfg()">Cancel</button>
@@ -483,10 +494,19 @@ function renderCfgPopup(){
     </div>`;
 }
 
-function setCfgGroups(n,total){ _cfgGroups=n; if(n!==4)_cfgFinals=1; renderCfgPopup(); updateSum(total); }
+function setCfgGroups(n,total){ _cfgGroups=n; if(n!==4){_cfgFinals=1;_cfgHasQF=false;} renderCfgPopup(); updateSum(total); }
 function setCfgFinals(n){ _cfgFinals=n;
-  document.querySelectorAll('.fin').forEach(b=>b.classList.remove('sel'));
-  event.target.classList.add('sel'); }
+  document.querySelectorAll('#finalsToggle .fin').forEach(b=>b.classList.remove('sel'));
+  event.target.classList.add('sel');
+  // QF option only makes sense with exactly 1 Final — hide/reset it otherwise.
+  const qfWrap=document.getElementById('qfToggleWrap');
+  if(qfWrap) qfWrap.style.display=(n===1)?'block':'none';
+  if(n!==1) _cfgHasQF=false;
+}
+function setCfgHasQF(v){ _cfgHasQF=v;
+  document.querySelectorAll('#qfToggle .fin').forEach(b=>b.classList.remove('sel'));
+  event.target.classList.add('sel');
+}
 function setCfgSeedMethod(m){ _cfgSeedMethod=m;
   document.querySelectorAll('#seedToggle .fin').forEach(b=>b.classList.remove('sel'));
   event.target.closest('.fin').classList.add('sel');
@@ -526,7 +546,7 @@ async function previewGroups(){
   try{
     const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({
       action:'previewGroups',week:DASH.week,category:_cfgKey,
-      groupSizes:groupSizes,numFinals:_cfgFinals,seedMethod:_cfgSeedMethod,
+      groupSizes:groupSizes,numFinals:_cfgFinals,seedMethod:_cfgSeedMethod,hasQF:_cfgHasQF,
     })});
     const out=await res.json();
     if(!out.ok){
@@ -554,7 +574,7 @@ function renderGroupsPopup(){
   const d=GROUPS_DRAFT; if(!d) return;
 
   let html=`<h2>${d.label} — Groups Preview</h2>
-    <div class="meta">Week ${d.week} · ${d.numGroups} group(s) · ${d.numFinals} final(s)${d.type!=='mixed'?' · '+d.seedMethod.charAt(0).toUpperCase()+d.seedMethod.slice(1)+' seeding':''}</div>
+    <div class="meta">Week ${d.week} · ${d.numGroups} group(s) · ${d.numFinals} final(s)${d.hasQF?' · with Quarterfinals':''}${d.type!=='mixed'?' · '+d.seedMethod.charAt(0).toUpperCase()+d.seedMethod.slice(1)+' seeding':''}</div>
     <div class="notebox" style="border-left:4px solid var(--cyan);">
       Click two players/pairs below, then press Swap to exchange their groups.
       Nothing is final yet — press <b>Generate Draw</b> when you're happy with the groups.
@@ -704,6 +724,7 @@ function renderDrawPreview(d,otp,key){
   const notes={
     '3group':'Qualifier 7 = best 3rd-placed team across groups. Qualifier 8 = second-best. Ranked by wins then net points.',
     '1group':'Top 4 advance. SF1 winner goes direct to Final. SF2 winner plays SF1 loser — winner advances to Final.',
+    '4group-1final-qf':'8 teams advance to Quarterfinals (1st and 2nd from each group), cross-seeded between Groups A/D and B/C.',
     '4group-2finals':'Two simultaneous Finals — no semifinal round.',
   };
   if(notes[d.structure]) html+=`<div class="notebox">${notes[d.structure]}</div>`;
