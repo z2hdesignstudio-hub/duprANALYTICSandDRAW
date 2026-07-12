@@ -134,6 +134,33 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 .mbtns .btn.green{background:linear-gradient(135deg,var(--lime),var(--lime-deep));color:#fff;}
 .mbtns .btn.green:disabled{background:var(--surface-2);color:#a8b8aa;cursor:not-allowed;transform:none;}
 
+/* ── Groups + Swap popup ── */
+.groups-hdr{display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;margin:18px 0 10px;}
+.groups-hdr h3{margin:0;}
+.swap-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.swap-btn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.92rem;
+  padding:9px 16px;border:none;border-radius:var(--r-sm);cursor:pointer;
+  background:var(--cyan);color:#fff;box-shadow:var(--clay-sm);transition:all .15s;
+  display:flex;align-items:center;gap:7px;}
+.swap-btn:disabled{background:var(--surface-2);color:#a8b8aa;cursor:not-allowed;box-shadow:none;}
+.swap-btn:not(:disabled):hover{transform:translateY(-1px);}
+.swap-icon{font-size:1.1rem;line-height:1;}
+.swap-hint{font-size:.82rem;font-weight:700;color:var(--pink);}
+.groups-grid{display:grid;gap:14px;margin-bottom:8px;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));}
+.group-col{background:var(--surface-2);border-radius:var(--r-sm);padding:12px;}
+.group-col-label{font-family:'Fredoka',sans-serif;font-weight:700;font-size:.95rem;
+  margin-bottom:10px;color:var(--ink);}
+.group-member{background:var(--surface);border-radius:11px;padding:10px 12px;
+  margin-bottom:8px;cursor:pointer;font-size:.88rem;font-weight:700;color:var(--ink);
+  box-shadow:var(--clay-sm);border:2px solid transparent;transition:all .15s;}
+.group-member:last-child{margin-bottom:0;}
+.group-member:hover{transform:translateY(-1px);}
+.group-member.selected{border-color:var(--cyan);background:#e3f7f7;}
+.group-member .gm-rating{display:block;font-size:.72rem;font-weight:800;color:var(--muted);margin-bottom:2px;}
+.group-member.selected .gm-rating{color:var(--cyan);}
+
 /* Draw preview sheet */
 .psheet{max-width:900px;background:var(--surface);border-radius:var(--r);
   box-shadow:var(--clay);padding:26px 24px 32px;margin:auto;}
@@ -185,6 +212,12 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 <!-- Draw config popup -->
 <div class="modal" id="cfgModal">
   <div class="msheet" id="cfgSheet"></div>
+</div>
+
+<!-- Groups + Swap popup — shows seeding + groups only, lets the admin
+     manually swap teams between groups before building the full schedule -->
+<div class="modal" id="groupsModal">
+  <div class="psheet" id="groupsSheet"></div>
 </div>
 
 <!-- Draw preview modal -->
@@ -283,7 +316,7 @@ function buildCatCard(key){
     <div class="table-scroll">${buildTable(key,c)}</div>
     <div class="cardbtns">
       <button class="addbtn" onclick="addSlot('${key}')">+ ${addLabel}</button>
-      <button class="drawbtn" onclick="openDrawConfig('${key}')">Generate Draw</button>
+      <button class="drawbtn" onclick="openDrawConfig('${key}')">Preview Draw</button>
     </div>`;
   return card;
 }
@@ -429,8 +462,8 @@ function renderCfgPopup(){
   const seedHtml=c.type==='mixed'?'':`
     <h3>Group Seeding</h3>
     <div class="segg" id="seedToggle">
-      <button class="fin ${_cfgSeedMethod==='snake'?'sel':''}" onclick="setCfgSeedMethod('snake')">Snake <span class="seed-hint">division</span></button>
-      <button class="fin ${_cfgSeedMethod==='cyclic'?'sel':''}" onclick="setCfgSeedMethod('cyclic')">Cyclic <span class="seed-hint">division</span></button>
+      <button class="fin ${_cfgSeedMethod==='snake'?'sel':''}" onclick="setCfgSeedMethod('snake')">Snake <span class="seed-hint">balanced groups</span></button>
+      <button class="fin ${_cfgSeedMethod==='cyclic'?'sel':''}" onclick="setCfgSeedMethod('cyclic')">Cyclic <span class="seed-hint">Group of Death</span></button>
     </div>`;
 
   document.getElementById('cfgSheet').innerHTML=`
@@ -446,7 +479,7 @@ function renderCfgPopup(){
     ${seedHtml}
     <div class="mbtns">
       <button class="btn" onclick="closeCfg()">Cancel</button>
-      <button class="btn green" id="cfgConfirm" disabled onclick="confirmDraw()">Confirm Draw</button>
+      <button class="btn green" id="cfgConfirm" disabled onclick="previewGroups()">Preview Groups</button>
     </div>`;
 }
 
@@ -486,25 +519,151 @@ function getGroupSizes(){
   return sizes;
 }
 
-async function confirmDraw(){
+async function previewGroups(){
   const btn=document.getElementById('cfgConfirm');
-  btn.disabled=true; btn.textContent='Generating…';
+  btn.disabled=true; btn.textContent='Loading groups…';
   const groupSizes=getGroupSizes();
   try{
     const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({
-      action:'previewDraw',week:DASH.week,category:_cfgKey,
+      action:'previewGroups',week:DASH.week,category:_cfgKey,
       groupSizes:groupSizes,numFinals:_cfgFinals,seedMethod:_cfgSeedMethod,
     })});
     const out=await res.json();
     if(!out.ok){
-      toast(out.error||'Could not generate draw');
-      btn.disabled=false; btn.textContent='Confirm Draw';
+      toast(out.error||'Could not preview groups');
+      btn.disabled=false; btn.textContent='Preview Groups';
       return;
     }
     closeCfg();
-    LAST_DRAW=out.draw; LAST_DRAW.otp=out.otp; CURRENT_DRAW_KEY=_cfgKey;
-    renderDrawPreview(out.draw,out.otp,_cfgKey);
-  }catch(e){ toast('Network error'); btn.disabled=false; btn.textContent='Confirm Draw'; }
+    btn.disabled=false; btn.textContent='Preview Groups';
+    GROUPS_DRAFT=out.groups; CURRENT_DRAW_KEY=_cfgKey;
+    _selectedTeams=[];
+    renderGroupsPopup();
+    document.getElementById('groupsModal').classList.add('show');
+    if(out.resumed) toast('Resumed your previous swap session');
+  }catch(e){ toast('Network error'); btn.disabled=false; btn.textContent='Preview Groups'; }
+}
+
+/* ======================== GROUPS + SWAP POPUP ======================== */
+let GROUPS_DRAFT=null;
+let _selectedTeams=[]; // up to 2 team IDs currently selected for swapping
+
+function closeGroupsPopup(){ document.getElementById('groupsModal').classList.remove('show'); }
+
+function renderGroupsPopup(){
+  const d=GROUPS_DRAFT; if(!d) return;
+
+  let html=`<h2>${d.label} — Groups Preview</h2>
+    <div class="meta">Week ${d.week} · ${d.numGroups} group(s) · ${d.numFinals} final(s)${d.type!=='mixed'?' · '+d.seedMethod.charAt(0).toUpperCase()+d.seedMethod.slice(1)+' seeding':''}</div>
+    <div class="notebox" style="border-left:4px solid var(--cyan);">
+      Click two players/pairs below, then press Swap to exchange their groups.
+      Nothing is final yet — press <b>Generate Draw</b> when you're happy with the groups.
+    </div>`;
+
+  // Seeding table for reference
+  html+=`<h3>Seeding</h3><table class="dtable"><tr><th>Seed</th><th>${d.type==='singles'?'Player':'Pair'}</th><th>${d.type==='mixed'?'Method':'Rating'}</th></tr>`;
+  d.seeds.forEach(t=>{html+=`<tr><td class="c">${t.rank}</td><td>${t.name}</td><td class="c">${d.type==='mixed'?'Random':(t.rating?Number(t.rating).toFixed(3):'—')}</td></tr>`;});
+  html+=`</table>`;
+
+  // Groups header with swap controls
+  const numGroups=d.groups.length;
+  html+=`<div class="groups-hdr">
+    <h3>Groups</h3>
+    ${numGroups>1?`<div class="swap-controls">
+      <button class="swap-btn" id="swapBtn" disabled onclick="doSwap()"><span class="swap-icon">&#8644;</span> Swap</button>
+      <span class="swap-hint" id="swapHint" style="display:none;"></span>
+    </div>`:''}
+  </div>`;
+
+  // Interactive groups grid
+  html+=`<div class="groups-grid">`;
+  d.groups.forEach(g=>{
+    html+=`<div class="group-col"><div class="group-col-label">${g.label}</div>`;
+    g.members.forEach(m=>{
+      const sel=_selectedTeams.includes(m.id);
+      const ratingLabel=d.type==='mixed'?'Random':(m.rating?Number(m.rating).toFixed(3):'—');
+      html+=`<div class="group-member ${sel?'selected':''}" onclick="toggleTeamSelect('${m.id}')">
+        <span class="gm-rating">${ratingLabel}</span>${m.name}
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  html+=`</div>`;
+
+  html+=`<div class="mbtns">
+    <button class="btn" onclick="closeGroupsPopup()">Close</button>
+    <button class="btn green" onclick="finalizeGenerateDraw()">Generate Draw</button>
+  </div>`;
+
+  document.getElementById('groupsSheet').innerHTML=html;
+  updateSwapButtonState();
+}
+
+function toggleTeamSelect(teamId){
+  const idx=_selectedTeams.indexOf(teamId);
+  if(idx>-1){
+    _selectedTeams.splice(idx,1); // re-clicking a selected name deselects it
+  }else{
+    if(_selectedTeams.length>=2) _selectedTeams.shift(); // keep only the 2 most recent selections
+    _selectedTeams.push(teamId);
+  }
+  renderGroupsPopup();
+}
+
+function updateSwapButtonState(){
+  const btn=document.getElementById('swapBtn');
+  const hint=document.getElementById('swapHint');
+  if(!btn) return; // single-group category — no swap controls rendered
+  if(_selectedTeams.length!==2){
+    btn.disabled=true;
+    if(hint) hint.style.display='none';
+    return;
+  }
+  const groupOf=teamId=>GROUPS_DRAFT.groups.findIndex(g=>g.members.some(m=>m.id===teamId));
+  const gA=groupOf(_selectedTeams[0]), gB=groupOf(_selectedTeams[1]);
+  if(gA===gB){
+    btn.disabled=true;
+    if(hint){ hint.textContent='They are already in the same group.'; hint.style.display='inline'; }
+  }else{
+    btn.disabled=false;
+    if(hint) hint.style.display='none';
+  }
+}
+
+async function doSwap(){
+  if(_selectedTeams.length!==2) return;
+  const btn=document.getElementById('swapBtn');
+  btn.disabled=true; btn.innerHTML='<span class="swap-icon">&#8644;</span> Swapping…';
+  try{
+    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({
+      action:'swapGroups',week:DASH.week,category:CURRENT_DRAW_KEY,
+      teamIdA:_selectedTeams[0],teamIdB:_selectedTeams[1],
+    })});
+    const out=await res.json();
+    if(!out.ok){ toast(out.error||'Could not swap'); }
+    else{ GROUPS_DRAFT=out.groups; toast('Swapped'); }
+  }catch(e){ toast('Network error'); }
+  _selectedTeams=[];
+  renderGroupsPopup();
+}
+
+async function finalizeGenerateDraw(){
+  const btns=document.querySelectorAll('#groupsSheet .mbtns button');
+  btns.forEach(b=>b.disabled=true);
+  try{
+    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({
+      action:'previewDraw',week:DASH.week,category:CURRENT_DRAW_KEY,
+    })});
+    const out=await res.json();
+    if(!out.ok){
+      toast(out.error||'Could not generate draw');
+      btns.forEach(b=>b.disabled=false);
+      return;
+    }
+    closeGroupsPopup();
+    LAST_DRAW=out.draw; LAST_DRAW.otp=out.otp;
+    renderDrawPreview(out.draw,out.otp,CURRENT_DRAW_KEY);
+  }catch(e){ toast('Network error'); btns.forEach(b=>b.disabled=false); }
 }
 
 /* ======================== DRAW PREVIEW ======================== */
