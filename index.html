@@ -196,6 +196,68 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 .floatnav a .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);
   display:none;margin-top:2px;}
 .floatnav a.active .dot{display:block;}
+
+/* ═══ CHANGE 4 — screens: card grid + detail view ═══ */
+.screen2{display:none;}
+.screen2.active{display:block;animation:screen2rise .35s ease both;}
+@keyframes screen2rise{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+
+/* Compact category cards (mirrors Website 1's card style) */
+.grid2{display:grid;gap:20px;margin-top:8px;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));}
+.card2{background:var(--surface);border-radius:var(--r);box-shadow:var(--clay);
+  padding:22px 20px 20px;cursor:pointer;position:relative;overflow:hidden;
+  transition:transform .18s ease,box-shadow .18s ease;}
+.card2:hover{transform:translateY(-4px);}
+.card2:active{transform:translateY(0);box-shadow:var(--clay-in);}
+.card2 .bar2{position:absolute;top:0;left:0;right:0;height:7px;}
+.card2[data-accent=lime] .bar2{background:var(--lime);}
+.card2[data-accent=pink] .bar2{background:var(--pink);}
+.card2[data-accent=cyan] .bar2{background:var(--cyan);}
+.card2[data-accent=orange] .bar2{background:var(--orange);}
+.card2-title{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.2rem;margin:6px 0 8px;}
+.card2-meta{font-size:.9rem;color:var(--muted);font-weight:600;line-height:1.5;}
+.card2-meta b{color:var(--ink);}
+.card2-rule{display:inline-block;margin-top:10px;font-size:.76rem;font-weight:700;
+  padding:5px 12px;border-radius:20px;background:var(--surface-2);box-shadow:var(--clay-sm);color:var(--ink);}
+.card2-bottom{margin-top:14px;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;}
+/* OTP — event-header font, no pill (per spec), sits left of the fill pill */
+.card2-otp{font-family:'Fredoka',sans-serif;font-weight:700;font-size:.92rem;color:var(--ink);}
+.card2-otp.muted{color:var(--muted);font-weight:600;font-size:.82rem;}
+.resched-tag{position:absolute;top:12px;right:12px;background:var(--orange);color:#fff;
+  font-weight:800;font-size:.68rem;padding:4px 10px;border-radius:10px;box-shadow:var(--clay-sm);
+  z-index:2;}
+
+/* Detail view */
+.detail-topbar{display:flex;align-items:center;justify-content:space-between;
+  gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+.back-btn2{background:none;border:none;cursor:pointer;font-family:'Nunito',sans-serif;
+  font-weight:800;color:var(--cyan);font-size:.95rem;display:inline-flex;align-items:center;gap:6px;}
+.detail-nav{display:flex;gap:8px;}
+.nav-arrow{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.1rem;
+  background:var(--surface);box-shadow:var(--clay-sm);border:none;border-radius:var(--r-sm);
+  padding:9px 16px;cursor:pointer;color:var(--ink);transition:transform .15s;}
+.nav-arrow:hover{transform:translateY(-2px);}
+
+/* Schedule editor (Clock + Calendar) */
+.sched-editor{background:var(--surface);border-radius:var(--r);box-shadow:var(--clay);
+  padding:20px 18px;margin-bottom:18px;}
+.sched-editor h3{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.05rem;margin-bottom:14px;}
+.sched-row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;}
+.sched-field label{display:block;font-weight:800;font-size:.8rem;margin-bottom:6px;color:var(--muted);}
+.sched-field input{font-family:'Nunito',sans-serif;font-weight:700;font-size:.95rem;
+  color:var(--ink);padding:11px 14px;border:none;border-radius:var(--r-sm);
+  background:var(--surface-2);box-shadow:var(--clay-in);outline:none;}
+.save-sched-btn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.95rem;color:#fff;
+  border:none;border-radius:var(--r-sm);padding:12px 22px;cursor:pointer;
+  background:linear-gradient(135deg,var(--lime),var(--lime-deep));box-shadow:var(--clay-sm);}
+.save-sched-btn:hover{transform:translateY(-2px);}
+.save-sched-btn:disabled{background:var(--surface-2);color:#a8b8aa;cursor:not-allowed;transform:none;}
+.reset-sched-btn{font-family:'Nunito',sans-serif;font-weight:800;font-size:.85rem;color:var(--muted);
+  background:var(--surface-2);border:none;border-radius:var(--r-sm);padding:12px 18px;cursor:pointer;
+  box-shadow:var(--clay-sm);}
+.reset-sched-btn:hover{color:var(--ink);}
+.resched-note{margin-top:12px;font-size:.85rem;font-weight:700;color:var(--orange);}
 </style>
 </head>
 <body>
@@ -208,7 +270,23 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
       <button class="btn cyan" onclick="loadDashboard()">Reload data</button>
     </div>
   </header>
-  <div id="content"><div class="loading">Loading registrations…</div></div>
+
+  <!-- SCREEN A: compact category cards -->
+  <section id="screenCards" class="screen2 active">
+    <div class="grid2" id="catGrid2"></div>
+  </section>
+
+  <!-- SCREEN B: single-category detail view -->
+  <section id="screenDetail" class="screen2">
+    <div class="detail-topbar">
+      <button class="back-btn2" onclick="backToCards()">‹ Back to events</button>
+      <div class="detail-nav">
+        <button class="nav-arrow" onclick="prevCategory()">‹</button>
+        <button class="nav-arrow" onclick="nextCategory()">›</button>
+      </div>
+    </div>
+    <div id="detailContent"><div class="loading">Loading…</div></div>
+  </section>
 </div>
 
 <!-- Draw config popup -->
@@ -242,67 +320,219 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
    ============================================================ */
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzeZaUXvfqsA1oVqwwnSxdn_JJrYnCJQ5-3vA0-TCJSjMZUP2tRMEl-PawqlxZ5opGbXg/exec";
 
-const WEEK14_START = new Date(2026, 5, 13); // Sat 13 Jun 2026
-
-// Day sections in display order — filtered by active week
-const DAY_GROUPS_FULL = [
-  { day:'monday',    title:'Monday Schedule',    cats:['action_doubles'],              sinceWeek:17 },
-  { day:'tuesday',   title:'Tuesday Schedule',   cats:['mixed_doubles'] },
-  { day:'wednesday', title:'Wednesday Schedule', cats:['newbee_doubles','stinger_doubles'] },
-  { day:'thursday',  title:'Thursday Schedule',  cats:['newbee_singles','stinger_singles'] },
-];
-
-function getDayGroups(week){
-  return DAY_GROUPS_FULL.filter(g=>!g.sinceWeek||week>=g.sinceWeek);
-}
-
 let DASH = null;
 let LAST_DRAW = null;
 let CURRENT_DRAW_KEY = null;
+let CURRENT_DETAIL_KEY = null;
 
 // PERF: debounce storage for cell saves
 const _debounce = {};
 
+/* ---- small display helpers (schedule now comes entirely from the
+   backend — see getEffectiveSchedule in Code.gs) ---- */
+function dayAbbrev(dayName){ return dayName ? (dayName.charAt(0).toUpperCase()+dayName.slice(1,3)) : ''; }
+function ruleText(c){
+  if(c.tierMax!=null && c.tierMin==null)
+    return c.tierStrictMax ? ('DUPR below '+Number(c.tierMax).toFixed(3)) : ('DUPR '+Number(c.tierMax).toFixed(3)+' & below');
+  if(c.tierMin!=null && c.tierMax==null)
+    return 'DUPR '+Number(c.tierMin).toFixed(3)+' & above';
+  return 'Open to all';
+}
+// Chronological order (day, then start time) — meaningful now that any
+// category's day/time can be individually rescheduled by the admin.
+function sortedCategoryKeys(){
+  const cats=DASH.categories||{};
+  return Object.keys(cats).sort((a,b)=>{
+    const ca=cats[a], cb=cats[b];
+    if(ca.day!==cb.day) return ca.day-cb.day;
+    return (ca.startMin||0)-(cb.startMin||0);
+  });
+}
+
 /* ======================== dashboard ======================== */
 async function loadDashboard(){
-  document.getElementById('content').innerHTML='<div class="loading">Loading registrations…</div>';
+  document.getElementById('catGrid2').innerHTML='<div class="loading">Loading registrations…</div>';
   try{
     const res=await fetch(BACKEND_URL+'?action=dashboard');
     DASH=await res.json();
     document.getElementById('welcome').innerHTML=
       `Insights from the <span class="hl">Week ${DASH.week}</span> of DUPR at PickleBee by 71`;
-    render();
+    renderCardGrid();
+    if(CURRENT_DETAIL_KEY && document.getElementById('screenDetail').classList.contains('active')){
+      renderDetail(); // keep an open detail view fresh after a manual Reload
+    }
   }catch(e){
-    document.getElementById('content').innerHTML='<div class="loading">Could not load data. Check URL and try Reload.</div>';
+    document.getElementById('catGrid2').innerHTML='<div class="loading">Could not load data. Check URL and try Reload.</div>';
   }
 }
 
-function render(){
-  const root=document.getElementById('content'); root.innerHTML='';
-  getDayGroups(DASH.week).forEach(group=>{
-    const sec=document.createElement('div'); sec.className='daysection';
-    const date=DASH.dates&&DASH.dates[group.day]?DASH.dates[group.day]:'';
-    sec.innerHTML=`<div class="dayhead">${group.title}<span class="date">${date}</span></div>`;
-    group.cats.forEach(key=>{
-      if(!DASH.categories[key]) return;
-      const card=buildCatCard(key);
-      card.id='catcard-'+key;
-      sec.appendChild(card);
-    });
-    root.appendChild(sec);
+function renderCardGrid(){
+  const grid=document.getElementById('catGrid2'); grid.innerHTML='';
+  sortedCategoryKeys().forEach(key=>{
+    const c=DASH.categories[key];
+    const otpHtml = c.otp
+      ? `<div class="card2-otp">OTP: ${c.otp}</div>`
+      : `<div class="card2-otp muted">A draw isn't generated yet</div>`;
+    const card=document.createElement('div');
+    card.className='card2';
+    card.setAttribute('data-accent',c.accent);
+    card.innerHTML=`
+      <div class="bar2"></div>
+      ${c.overridden?'<div class="resched-tag">Rescheduled</div>':''}
+      <div class="card2-title">${c.label}</div>
+      <div class="card2-meta"><b>${dayAbbrev(c.dayName)} · ${c.date}</b><br>${c.time}</div>
+      <div class="card2-rule">${ruleText(c)}</div>
+      <div class="card2-bottom">
+        ${otpHtml}
+        <div class="fillpill">${c.filled} / ${c.limit} filled</div>
+      </div>`;
+    card.onclick=()=>openDetail(key);
+    grid.appendChild(card);
   });
 }
 
-// PERF: update only one category card in-place (no full re-render)
+/* ---- detail view (single category) ---- */
+function openDetail(key){
+  CURRENT_DETAIL_KEY=key;
+  renderDetail();
+  switchScreen2('screenDetail');
+}
+function backToCards(){
+  renderCardGrid(); // reflect anything changed while in the detail view
+  switchScreen2('screenCards');
+}
+function switchScreen2(id){
+  document.querySelectorAll('.screen2').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function prevCategory(){
+  const keys=sortedCategoryKeys(); const i=keys.indexOf(CURRENT_DETAIL_KEY);
+  if(i>0) openDetail(keys[i-1]);
+}
+function nextCategory(){
+  const keys=sortedCategoryKeys(); const i=keys.indexOf(CURRENT_DETAIL_KEY);
+  if(i<keys.length-1) openDetail(keys[i+1]);
+}
+
+function renderDetail(){
+  const key=CURRENT_DETAIL_KEY;
+  const c=DASH.categories[key];
+  const container=document.getElementById('detailContent');
+  container.innerHTML='';
+  container.appendChild(buildScheduleEditor(key,c));
+  const card=buildCatCard(key);
+  card.id='catcard-'+key;
+  container.appendChild(card);
+}
+
+/* ---- Change 1: Clock & Calendar schedule override ---- */
+function buildScheduleEditor(key,c){
+  const wrap=document.createElement('div');
+  wrap.className='sched-editor';
+
+  // Bound the date picker to ONLY this week's 7 days (Sat-Fri) — per spec,
+  // other dates are not selectable at all.
+  const weekStart=new Date(DASH.weekStartDate);
+  const minStr=toDateInputStr(weekStart);
+  const maxD=new Date(weekStart); maxD.setDate(maxD.getDate()+6);
+  const maxStr=toDateInputStr(maxD);
+  const curD=new Date(weekStart); curD.setDate(curD.getDate()+c.day);
+  const curDateStr=toDateInputStr(curD);
+  const curTimeStr=minutesToTimeInputStr(c.startMin);
+
+  wrap.innerHTML=`
+    <h3>Event Schedule</h3>
+    <div class="sched-row">
+      <div class="sched-field">
+        <label>Date</label>
+        <input type="date" id="schedDate" value="${curDateStr}" min="${minStr}" max="${maxStr}">
+      </div>
+      <div class="sched-field">
+        <label>Time</label>
+        <input type="time" id="schedTime" value="${curTimeStr}">
+      </div>
+      <button class="save-sched-btn" id="saveSchedBtn" onclick="saveSchedule()">Save</button>
+      ${c.overridden?'<button class="reset-sched-btn" onclick="resetSchedule()">Reset to default</button>':''}
+    </div>
+    ${c.overridden?'<div class="resched-note">This event has been rescheduled for this week only — it automatically reverts to its default day/time next week.</div>':''}
+  `;
+  return wrap;
+}
+function toDateInputStr(d){ return Utilities_formatLocalDate(d); }
+function Utilities_formatLocalDate(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
+function minutesToTimeInputStr(startMin){
+  const h=Math.floor((startMin||0)/60)%24, m=(startMin||0)%60;
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+
+async function saveSchedule(force){
+  const key=CURRENT_DETAIL_KEY;
+  const dateInp=document.getElementById('schedDate');
+  const timeInp=document.getElementById('schedTime');
+  const dateVal=dateInp.value, timeVal=timeInp.value;
+  if(!dateVal||!timeVal){ toast('Please pick both a date and a time.'); return; }
+
+  const weekStart=new Date(DASH.weekStartDate);
+  const weekStartLocal=new Date(weekStart.getFullYear(),weekStart.getMonth(),weekStart.getDate());
+  const [py,pm,pd]=dateVal.split('-').map(Number);
+  const picked=new Date(py,pm-1,pd);
+  const offset=Math.round((picked-weekStartLocal)/86400000);
+
+  const [hh,mm]=timeVal.split(':').map(Number);
+  const startMin=hh*60+mm;
+  const ampm=hh>=12?'PM':'AM'; let h12=hh%12; if(h12===0)h12=12;
+  const timeLabel=h12+':'+String(mm).padStart(2,'0')+' '+ampm+' onwards';
+
+  const btn=document.getElementById('saveSchedBtn');
+  if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+  try{
+    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({
+      action:'saveSchedule',week:DASH.week,category:key,
+      offset:offset,startMin:startMin,time:timeLabel,force:!!force,
+    })});
+    const out=await res.json();
+    if(!out.ok){
+      if(out.conflict){
+        if(confirm(out.error+' Save anyway?')){ await saveSchedule(true); return; }
+      }else{
+        toast(out.error||'Could not save schedule');
+      }
+      if(btn){ btn.disabled=false; btn.textContent='Save'; }
+      return;
+    }
+    toast('Schedule updated');
+    await loadDashboard();
+    if(document.getElementById('screenDetail').classList.contains('active')) renderDetail();
+  }catch(e){
+    toast('Network error');
+    if(btn){ btn.disabled=false; btn.textContent='Save'; }
+  }
+}
+
+async function resetSchedule(){
+  if(!confirm('Reset this event back to its default day and time for this week?')) return;
+  const key=CURRENT_DETAIL_KEY;
+  try{
+    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'resetSchedule',week:DASH.week,category:key})});
+    const out=await res.json();
+    if(out.ok){ toast('Reset to default'); await loadDashboard(); if(document.getElementById('screenDetail').classList.contains('active')) renderDetail(); }
+    else toast(out.error||'Could not reset');
+  }catch(e){ toast('Network error'); }
+}
+
+// PERF: refresh only the currently-open detail view (there's only ever
+// one visible at a time now) after an edit, without a full page reload.
 async function refreshCard(key){
   try{
     const res=await fetch(BACKEND_URL+'?action=dashboard');
     DASH=await res.json();
-    const existing=document.getElementById('catcard-'+key);
-    if(!existing){render();return;}
-    const newCard=buildCatCard(key);
-    newCard.id='catcard-'+key;
-    existing.replaceWith(newCard);
+    if(CURRENT_DETAIL_KEY===key && document.getElementById('screenDetail').classList.contains('active')){
+      renderDetail();
+    }
   }catch(e){ toast('Could not refresh'); }
 }
 
