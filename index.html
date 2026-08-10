@@ -120,6 +120,7 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 .segg button.fin.sel{background:var(--cyan);color:#fff;}
 .seed-hint{display:block;font-size:.68rem;font-weight:600;opacity:.75;margin-top:2px;}
 .qf-ineligible-hint{color:var(--pink);font-weight:800;font-size:.82rem;margin-top:8px;}
+.qf-fixed-note{color:var(--muted);font-weight:700;font-size:.82rem;margin-top:10px;font-style:italic;}
 .segg button:disabled{opacity:.4;cursor:not-allowed;}
 .grp-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:12px;}
 .grp-inp-wrap label{display:block;font-weight:800;font-size:.82rem;margin-bottom:6px;color:var(--muted);}
@@ -784,7 +785,7 @@ function renderCfgPopup(){
         <button class="fin ${_cfgHasQF?'sel':''}" onclick="setCfgHasQF(true)" ${qfEligible?'':'disabled'}>Yes</button>
       </div>
       ${qfEligible?'':'<div class="qf-ineligible-hint">Need at least 8 registered players/pairs to enable Quarterfinals.</div>'}
-      <div id="qfSubToggles" style="display:${(_cfgHasQF&&qfEligible)?'block':'none'}">
+      ${ng===1?`<div id="qfSubToggles" style="display:${(_cfgHasQF&&qfEligible)?'block':'none'}">
         <h3 style="margin-top:14px;">Quarterfinal Seeding</h3>
         <div class="segg" id="qfSeedToggle">
           <button class="fin ${_cfgQfSeedMethod==='cross'?'sel':''}" onclick="setCfgQfSeedMethod('cross')">Cross <span class="seed-hint">e.g. 1 vs 8</span></button>
@@ -795,7 +796,7 @@ function renderCfgPopup(){
           <button class="fin ${_cfgSfSeedMethod==='cross'?'sel':''}" onclick="setCfgSfSeedMethod('cross')">Cross</button>
           <button class="fin ${_cfgSfSeedMethod==='straight'?'sel':''}" onclick="setCfgSfSeedMethod('straight')">Straight</button>
         </div>
-      </div>
+      </div>`:(_cfgHasQF&&qfEligible?'<div class="qf-fixed-note">This category uses a fixed knockout structure — no seeding choice needed.</div>':'')}
     </div>`:'';
 
   // Seeding method toggle — irrelevant for Mixed Bee (already random), so hidden there.
@@ -933,7 +934,7 @@ function renderGroupsPopup(){
   const d=GROUPS_DRAFT; if(!d) return;
 
   let html=`<h2>${d.label} — Groups Preview</h2>
-    <div class="meta">Week ${d.week} · ${d.numGroups} group(s) · ${d.numFinals} final(s)${d.hasQF?' · with Quarterfinals ('+d.qfSeedMethod.charAt(0).toUpperCase()+d.qfSeedMethod.slice(1)+' QF / '+d.sfSeedMethod.charAt(0).toUpperCase()+d.sfSeedMethod.slice(1)+' SF)':''}${d.type!=='mixed'?' · '+d.seedMethod.charAt(0).toUpperCase()+d.seedMethod.slice(1)+' seeding':''}</div>
+    <div class="meta">Week ${d.week} · ${d.numGroups} group(s) · ${d.numFinals} final(s)${d.hasQF?(d.numGroups===1?' · with Quarterfinals ('+d.qfSeedMethod.charAt(0).toUpperCase()+d.qfSeedMethod.slice(1)+' QF / '+d.sfSeedMethod.charAt(0).toUpperCase()+d.sfSeedMethod.slice(1)+' SF)':' · with Quarterfinals (fixed bracket)'):''}${d.type!=='mixed'?' · '+d.seedMethod.charAt(0).toUpperCase()+d.seedMethod.slice(1)+' seeding':''}</div>
     <div class="notebox" style="border-left:4px solid var(--cyan);">
       Click two players/pairs below, then press Swap to exchange their groups.
       Nothing is final yet — press <b>Generate Draw</b> when you're happy with the groups.
@@ -1082,10 +1083,10 @@ function renderDrawPreview(d,otp,key){
   // Note
   const notes={
     '3group':'Qualifier 7 = best 3rd-placed team across groups. Qualifier 8 = second-best. Ranked by wins then net points.',
-    '1group':'Top 4 advance.G1R1 v G2R4 -> SF1. G1R2 v G1R3 -> SF2. SF1 Winner will play against SF2 winner in the Final.',
+    '1group':'Top 4 advance. SF1 winner goes direct to Final. SF2 winner plays SF1 loser — winner advances to Final.',
     '1group-qf':'Top 8 advance to Quarterfinals ('+(d.qfSeedMethod==='straight'?'Straight':'Cross')+' seeded), then Semifinals ('+(d.sfSeedMethod==='straight'?'Straight':'Cross')+' seeded).',
-    '2group-qf':'Top 4 from each group advance to Quarterfinals ('+(d.qfSeedMethod==='straight'?'Straight':'Cross')+' seeded), then Semifinals ('+(d.sfSeedMethod==='straight'?'Straight':'Cross')+' seeded).',
-    '4group-1final-qf':'1st and 2nd from each group advance to Quarterfinals ('+(d.qfSeedMethod==='straight'?'Straight':'Cross')+' seeded), then Semifinals ('+(d.sfSeedMethod==='straight'?'Straight':'Cross')+' seeded).',
+    '2group-qf':'Top 4 from each group advance to Quarterfinals — fixed bracket: QF1=A1vB4, QF2=A3vB2, QF3=A4vB1, QF4=A2vB3, then straight semis (QF1vQF2, QF3vQF4).',
+    '4group-1final-qf':'1st and 2nd from each group advance to Quarterfinals — fixed bracket: QF1=A1vB2, QF2=B1vA2, QF3=C1vD2, QF4=D1vC2, then SF1=QF1vQF3, SF2=QF2vQF4.',
     '4group-2finals':'Two simultaneous Finals — no semifinal round.',
   };
   if(notes[d.structure]) html+=`<div class="notebox">${notes[d.structure]}</div>`;
