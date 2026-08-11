@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 :root{
@@ -1055,7 +1054,7 @@ function renderDrawPreview(d,otp,key){
       <span>Share this with referees. Valid for this category all week.</span></div>
     <div class="notebox" style="border-left:4px solid var(--cyan);">
       This is a preview only — referees will keep seeing the previous committed draw
-      (or nothing, if none exists yet) until you press <b>Download .docx</b> below.
+      (or nothing, if none exists yet) until you press <b>Download .xlsx</b> below.
       You can adjust the group config and re-preview as many times as you like before then.
     </div>`;
 
@@ -1094,8 +1093,7 @@ function renderDrawPreview(d,otp,key){
 
   html+=`<div class="mbtns">
     <button class="btn" onclick="closeDrawPreview()">Close</button>
-    <button class="btn green" id="downloadDocxBtn" onclick="downloadDraw('docx')">Download .docx</button>
-    <button class="btn green" id="downloadXlsxBtn" onclick="downloadDraw('xlsx')">Download .xlsx</button>
+    <button class="btn green" id="downloadXlsxBtn" onclick="downloadDraw()">Download .xlsx</button>
   </div>`;
   document.getElementById('drawSheet').innerHTML=html;
   document.getElementById('drawModal').classList.add('show');
@@ -1164,21 +1162,17 @@ function renderBracketReadOnly(d){
   document.getElementById('bracketViewSheet').innerHTML=html;
 }
 
-/* ======================== STYLED DOWNLOAD — .docx or .xlsx ======================== */
-async function downloadDraw(format){
+/* ======================== STYLED DOWNLOAD — .xlsx ======================== */
+async function downloadDraw(){
   const d=LAST_DRAW; if(!d) return;
-  const docxBtn=document.getElementById('downloadDocxBtn');
   const xlsxBtn=document.getElementById('downloadXlsxBtn');
-  const activeBtn=format==='xlsx'?xlsxBtn:docxBtn;
-  const otherBtn=format==='xlsx'?docxBtn:xlsxBtn;
 
   // Commit the exact previewed draft to live BEFORE building the file.
   // This is the one moment referees' view actually changes — guaranteeing
   // the downloaded file and what Website 3 shows are always identical.
   // (Safe to commit again even if already committed this session — it's
   // an idempotent overwrite with the same draft data.)
-  if(activeBtn){ activeBtn.disabled=true; activeBtn.textContent='Committing draw…'; }
-  if(otherBtn) otherBtn.disabled=true;
+  if(xlsxBtn){ xlsxBtn.disabled=true; xlsxBtn.textContent='Committing draw…'; }
   let drawSheetUrl=null;
   try{
     const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({
@@ -1196,10 +1190,9 @@ async function downloadDraw(format){
     resetDownloadBtns();
     return;
   }
-  if(activeBtn){ activeBtn.textContent='Preparing document…'; }
+  if(xlsxBtn){ xlsxBtn.textContent='Preparing document…'; }
 
-  if(format==='xlsx') await buildAndDownloadXlsx(d);
-  else await buildAndDownloadDocx(d);
+  await buildAndDownloadXlsx(d);
 
   resetDownloadBtns();
   if(drawSheetUrl){
@@ -1207,173 +1200,8 @@ async function downloadDraw(format){
   }
 }
 function resetDownloadBtns(){
-  const docxBtn=document.getElementById('downloadDocxBtn');
   const xlsxBtn=document.getElementById('downloadXlsxBtn');
-  if(docxBtn){ docxBtn.disabled=false; docxBtn.textContent='Download .docx'; }
   if(xlsxBtn){ xlsxBtn.disabled=false; xlsxBtn.textContent='Download .xlsx'; }
-}
-
-function buildAndDownloadDocx(d){
-  if(typeof docx==='undefined'){toast('Draw library loading — try again in a moment.');return;}
-  const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,HeadingLevel,AlignmentType,ShadingType,BorderStyle} = docx;
-
-  const DARK='1A2744', WHITE='FFFFFF', LIME='8BB800', PINK='FF2E9A', CYAN='12CCCC', ORANGE='FF8F00';
-  const categoryColor = (type,accent) => ({lime:LIME,pink:PINK,cyan:CYAN,orange:ORANGE}[accent]||LIME);
-  const catColor = categoryColor(d.type, DASH.categories[CURRENT_DRAW_KEY]&&DASH.categories[CURRENT_DRAW_KEY].accent||'lime');
-
-  // Helper builders
-  const shading=(color)=>({type:ShadingType.CLEAR,color:'auto',fill:color});
-  const borders=(color)=>({top:{style:BorderStyle.SINGLE,size:6,color:color},bottom:{style:BorderStyle.SINGLE,size:6,color:color},left:{style:BorderStyle.SINGLE,size:6,color:color},right:{style:BorderStyle.SINGLE,size:6,color:color}});
-  const cell=(text,opts={})=>new TableCell({
-    shading:opts.bg?shading(opts.bg):undefined,
-    borders:opts.border?borders(opts.border||'CCCCCC'):undefined,
-    width:opts.w?{size:opts.w,type:WidthType.PERCENTAGE}:undefined,
-    children:[new Paragraph({alignment:opts.center?AlignmentType.CENTER:AlignmentType.LEFT,
-      children:[new TextRun({text:String(text||''),bold:!!opts.bold,color:opts.color||'000000',size:opts.size||20})]})]
-  });
-  const row=(...cells)=>new TableRow({children:cells});
-  const P=(text,opts={})=>new Paragraph({alignment:opts.center?AlignmentType.CENTER:AlignmentType.LEFT,
-    spacing:{before:opts.before||0,after:opts.after||100},
-    children:[new TextRun({text:String(text||''),bold:!!opts.bold,size:opts.size||20,color:opts.color||'000000',font:opts.font||'Calibri'})]});
-  const spacer=()=>new Paragraph({text:'',spacing:{after:80}});
-
-  const kids=[];
-
-  // === COVER PAGE ===
-  // Dark header bar simulation
-  kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[row(
-    cell('PickleBee by 71\nDUPR Night Draw System\nDesigned & Developed by Z2H x Real Solutions',{bg:DARK,color:WHITE,bold:true,size:22,w:75}),
-    cell('Z2H x REALSOLUTIONS',{bg:CYAN,color:DARK,bold:true,center:true,size:20,w:25})
-  )]}));
-  kids.push(spacer());
-  kids.push(P(`DUPR Night ${d.label} — Draw`,{bold:true,size:36,center:true}));
-  kids.push(P(new Date().toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),{center:true,size:20,color:'666666'}));
-  kids.push(spacer());
-
-  // Mode + Total pills
-  kids.push(new Table({width:{size:60,type:WidthType.PERCENTAGE},rows:[row(
-    cell('Mode: '+(d.type.charAt(0).toUpperCase()+d.type.slice(1)),{bg:'F0F0F0',size:20}),
-    cell('Total: '+d.seeds.length+' Players',{bg:'F0F0F0',size:20}),
-    cell('Structure: '+d.structure,{bg:'F0F0F0',size:20}),
-    cell(d.seedMethod?('Seeding: '+d.seedMethod.charAt(0).toUpperCase()+d.seedMethod.slice(1)):'',{bg:'F0F0F0',size:20}),
-  )]}));
-  kids.push(spacer());
-
-  // OTP banner
-  kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[row(
-    cell('REFEREE ACCESS CODE — OTP: '+d.otp+'\nShare with referees. Valid for the entire week.',{bg:catColor,color:WHITE,bold:true,size:24,center:true})
-  )]}));
-  kids.push(spacer());
-
-  // Summary per group
-  kids.push(P('Groups Summary',{bold:true,size:24}));
-  d.groups.forEach(g=>{
-    const matchCount=d.groupStage.filter(m=>m.group===g.label).length;
-    // Derive court from actual match data (not hardcoded by letter)
-    const gCourt=(d.groupStage.find(m=>m.group===g.label)||{}).court||'Court N';
-    kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
-      row(cell(g.label+' - '+g.members.length+' participants - '+matchCount+' round-robin matches - '+gCourt,{bg:catColor,color:WHITE,bold:true,size:20}))
-    ]}));
-    kids.push(spacer());
-  });
-
-  // === PER GROUP PAGES ===
-  d.groups.forEach((g,gi)=>{
-    kids.push(new Paragraph({pageBreakBefore:gi>0,text:'',spacing:{after:80}}));
-
-    // Category header (em dash replaced with regular dash)
-    kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
-      row(cell(d.label+' - '+g.label,{bg:DARK,color:WHITE,bold:true,size:26}))
-    ]}));
-    kids.push(spacer());
-
-    // Court derived from actual match data (Fix 3: no more hardcoded A/B=N, C=B)
-    const courtLabel=(d.groupStage.find(m=>m.group===g.label)||{}).court||'Court N';
-    kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
-      row(cell(courtLabel+' · '+g.members.length+' players',{bg:catColor,color:WHITE,bold:true,size:22}))
-    ]}));
-    kids.push(P('PARTICIPANTS',{bold:true,color:catColor,size:18,before:120}));
-
-    g.members.forEach((name,mi)=>{
-      const seed=d.seeds.find(s=>s.name===name);
-      const rating=seed&&seed.rating?Number(seed.rating).toFixed(3):'';
-      kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[row(
-        cell((mi+1)+'.  '+name,{size:20}),
-        cell(rating?'DUPR '+rating:'',{size:20,color:catColor,bold:true,center:true,w:20})
-      )]}));
-    });
-
-    // Round robin schedule (Fix 4: time column added before match ID)
-    const groupMatches=d.groupStage.filter(m=>m.group===g.label);
-    kids.push(spacer());
-    kids.push(P('ROUND ROBIN SCHEDULE - '+groupMatches.length+' MATCHES',{bold:true,color:catColor,size:18}));
-    groupMatches.forEach((m,mi)=>{
-      kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[row(
-        cell(m.time,{size:16,center:true,color:'444444',w:14}),
-        cell(m.id,{bg:catColor,color:WHITE,bold:true,size:16,center:true,w:9}),
-        cell(m.a,{size:18,w:34}),
-        cell('vs',{size:16,color:catColor,center:true,w:9}),
-        cell(m.b,{size:18,w:34})
-      )]}));
-    });
-
-    // Blank standings table
-    kids.push(spacer());
-    kids.push(P('STANDINGS (FILL IN DURING PLAY)',{bold:true,color:catColor,size:18}));
-    kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
-      row(
-        cell('Player / Pair',{bg:DARK,color:WHITE,bold:true,size:18,w:55}),
-        cell('W',{bg:DARK,color:WHITE,bold:true,center:true,size:18,w:12}),
-        cell('L',{bg:DARK,color:WHITE,bold:true,center:true,size:18,w:11}),
-        cell('Pts',{bg:DARK,color:WHITE,bold:true,center:true,size:18,w:11}),
-        cell('Rank',{bg:DARK,color:WHITE,bold:true,center:true,size:18,w:11}),
-      ),
-      ...g.members.map(name=>row(
-        cell(name,{size:18}),
-        cell('___',{center:true,color:'AAAAAA',size:16}),
-        cell('___',{center:true,color:'AAAAAA',size:16}),
-        cell('___',{center:true,color:'AAAAAA',size:16}),
-        cell('___',{center:true,color:'AAAAAA',size:16}),
-      ))
-    ]}));
-  });
-
-  // === KNOCKOUT PAGE === (Fix 5: time column added to every match row)
-  kids.push(new Paragraph({pageBreakBefore:true,text:'',spacing:{after:80}}));
-  kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
-    row(cell('KNOCKOUT STAGE',{bg:DARK,color:WHITE,bold:true,size:28,center:true}))
-  ]}));
-  kids.push(spacer());
-
-  const stages=[...new Set(d.knockout.map(m=>m.stage))];
-  stages.forEach(stage=>{
-    const stageMoves=d.knockout.filter(m=>m.stage===stage);
-    const stageLabel=stage==='final'?'FINAL - BEE OF THE COURT':
-      stage==='final1'?'FINAL 1':stage==='final2'?'FINAL 2':
-      stage.toUpperCase().replace('QF','QUARTERFINAL ').replace('SF','SEMI FINAL ').replace('CON','CONSOLATION');
-    kids.push(P(stageLabel,{bold:true,size:22,before:160}));
-    stageMoves.forEach(m=>{
-      kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[row(
-        cell(m.time||'',{size:16,center:true,color:'444444',w:14}),
-        cell(m.a,{size:18,w:36}),
-        cell('vs',{size:16,color:catColor,center:true,w:14}),
-        cell(m.b,{size:18,w:36}),
-      )]}));
-    });
-    kids.push(spacer());
-  });
-
-  // Footer note
-  kids.push(P('PickleBee by 71 · DUPR Night Draw System · Designed & Developed by Z2H x RealSolutions',{center:true,size:16,color:'999999'}));
-
-  const doc=new Document({sections:[{children:kids}]});
-  return Packer.toBlob(doc).then(blob=>{
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url;
-    a.download=(d.label.replace(/[^a-z0-9]+/gi,'_'))+'_Week'+d.week+'_Draw.docx';
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    toast('Draw downloaded');
-  }).catch(()=>toast('Could not build the .docx — try again.'));
 }
 
 /* ======================== STYLED .xlsx DOWNLOAD ======================== */
@@ -1408,10 +1236,13 @@ async function buildAndDownloadXlsx(d){
   if(typeof XLSX==='undefined'){ toast('Spreadsheet library loading — try again in a moment.'); return; }
   const isSingles=(d.type==='singles');
   const headerColor=isSingles?XLSX_CYAN:XLSX_GREEN;
+  const catInfo=DASH.categories[CURRENT_DRAW_KEY]||{};
+  const eventTitle=d.label+(catInfo.date?(' — '+catInfo.date):'');
 
   const fill=(hex)=>({fgColor:{rgb:hex}});
   const cellS=(v,style)=>({v:v==null?'':v, t:(typeof v==='number'?'n':'s'), s:style||{}});
   const boldCenter=(hex)=>({font:{bold:true},fill:hex?fill(hex):undefined,alignment:{horizontal:'center',vertical:'center'}});
+  const titleRow=()=>({font:{bold:true,color:{rgb:'FFFFFF'}},fill:fill('1A2744'),alignment:{horizontal:'center',vertical:'center'}});
   const plain=()=>({alignment:{vertical:'center'}});
   const merges=[];
   const mergeRow=(r,c1,c2)=>merges.push({s:{r,c:c1},e:{r,c:c2}});
@@ -1421,6 +1252,8 @@ async function buildAndDownloadXlsx(d){
   // ── Sheet 1: Groups (standings, blank score/rank for fill-in) ──
   {
     const rows=[]; const localMerges=[];
+    rows.push([cellS(eventTitle,titleRow()),cellS('',titleRow()),cellS('',titleRow())]);
+    localMerges.push({s:{r:0,c:0},e:{r:0,c:2}});
     d.groups.forEach(g=>{
       const groupMatchesForTime=d.groupStage.find(m=>m.group===g.label);
       const timeLabel=groupMatchesForTime?groupMatchesForTime.time:'';
@@ -1445,6 +1278,8 @@ async function buildAndDownloadXlsx(d){
   const courtsUsed=[...new Set(d.groupStage.map(m=>m.court).concat(d.knockout.map(m=>m.court)))];
   courtsUsed.forEach(court=>{
     const rows=[]; const localMerges=[];
+    rows.push([cellS(eventTitle,titleRow()),cellS('',titleRow()),cellS('',titleRow()),cellS('',titleRow()),cellS('',titleRow()),cellS('',titleRow())]);
+    localMerges.push({s:{r:0,c:0},e:{r:0,c:5}});
     const r0=rows.length;
     rows.push([cellS(court,boldCenter(headerColor)),cellS('',boldCenter(headerColor)),cellS('',boldCenter(headerColor)),cellS('',boldCenter(headerColor)),cellS('',boldCenter(headerColor)),cellS('',boldCenter(headerColor))]);
     localMerges.push({s:{r:r0,c:0},e:{r:r0,c:5}});
