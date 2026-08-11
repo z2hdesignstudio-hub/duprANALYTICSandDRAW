@@ -1237,7 +1237,8 @@ async function buildAndDownloadXlsx(d){
   const isSingles=(d.type==='singles');
   const headerColor=isSingles?XLSX_CYAN:XLSX_GREEN;
   const catInfo=DASH.categories[CURRENT_DRAW_KEY]||{};
-  const eventTitle=d.label+(catInfo.date?(' — '+catInfo.date):'');
+  const dayFull=catInfo.dayName?(catInfo.dayName.charAt(0).toUpperCase()+catInfo.dayName.slice(1)):'';
+  const eventTitle=d.label+' — Week '+d.week+(dayFull?(' — '+dayFull):'')+(catInfo.date?(', '+catInfo.date):'');
 
   const fill=(hex)=>({fgColor:{rgb:hex}});
   const cellS=(v,style)=>({v:v==null?'':v, t:(typeof v==='number'?'n':'s'), s:style||{}});
