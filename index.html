@@ -223,6 +223,12 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
   gap:10px;flex-wrap:wrap;}
 /* Week selector — prev/next + dropdown, shown above the card grid */
 .week-selector{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.reg-toggle-btn{margin-left:auto;font-family:'Fredoka',sans-serif;font-weight:600;font-size:.9rem;
+  color:#fff;border:none;border-radius:var(--r-sm);padding:10px 16px;cursor:pointer;
+  box-shadow:var(--clay-sm);transition:transform .15s;}
+.reg-toggle-btn:hover{transform:translateY(-2px);}
+.reg-toggle-btn.is-open{background:linear-gradient(135deg,var(--lime),var(--lime-deep));color:var(--ink);}
+.reg-toggle-btn.is-closed{background:linear-gradient(135deg,var(--orange),#c26400);}
 .week-selector select{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.98rem;
   color:var(--ink);padding:10px 16px;border:none;border-radius:var(--r-sm);
   background:var(--surface);box-shadow:var(--clay-sm);outline:none;cursor:pointer;}
@@ -285,6 +291,7 @@ input[disabled],select.pay-locked{opacity:.65;cursor:not-allowed;}
       <button class="nav-arrow" onclick="prevWeek()">‹</button>
       <select id="weekDropdown" onchange="onWeekDropdownChange()"></select>
       <button class="nav-arrow" onclick="nextWeek()">›</button>
+      <button class="reg-toggle-btn" id="regToggleBtn" onclick="toggleRegistrationOpen()">Registration: …</button>
     </div>
     <div class="grid2" id="catGrid2"></div>
   </section>
@@ -382,6 +389,7 @@ async function loadDashboard(){
     if(SELECTED_WEEK===null) SELECTED_WEEK=DASH.week; // first load — lock onto whatever the backend says is current
     document.getElementById('welcome').innerHTML=
       `Insights from the <span class="hl">Week ${DASH.week}</span> of DUPR at PickleBee by 71`;
+    updateRegToggleBtn();
     populateWeekDropdown();
     renderCardGrid();
     if(CURRENT_DETAIL_KEY && document.getElementById('screenDetail').classList.contains('active')){
@@ -390,6 +398,28 @@ async function loadDashboard(){
   }catch(e){
     document.getElementById('catGrid2').innerHTML='<div class="loading">Could not load data. Check URL and try Reload.</div>';
   }
+}
+
+/* ---- Season idle toggle — pauses/resumes public registration on Website 1 ---- */
+function updateRegToggleBtn(){
+  const btn=document.getElementById('regToggleBtn'); if(!btn||!DASH) return;
+  const open=DASH.registrationOpen!==false;
+  btn.textContent = open ? 'Registration: OPEN' : 'Registration: CLOSED';
+  btn.className = 'reg-toggle-btn ' + (open ? 'is-open' : 'is-closed');
+}
+async function toggleRegistrationOpen(){
+  const open=DASH.registrationOpen!==false;
+  const goingTo=!open;
+  const msg = goingTo
+    ? 'Reopen registration on Website 1? Players will be able to register again immediately.'
+    : 'Pause registration on Website 1? Players will see a season-closed message instead of category cards until you turn this back on.';
+  if(!confirm(msg)) return;
+  try{
+    const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'setRegistrationOpen',open:goingTo})});
+    const out=await res.json();
+    if(out.ok){ DASH.registrationOpen=out.open; updateRegToggleBtn(); toast(out.open?'Registration reopened':'Registration paused'); }
+    else toast(out.error||'Could not update');
+  }catch(e){ toast('Network error'); }
 }
 
 /* ---- week navigation (history browsing back to Week 16) ---- */
