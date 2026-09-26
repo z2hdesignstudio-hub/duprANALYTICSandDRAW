@@ -278,7 +278,7 @@ input[disabled],select.pay-locked{opacity:.65;cursor:not-allowed;}
 <div class="wrap">
   <header>
     <img src="./picklebee-logo.png" class="logo" alt="PickleBee by 71" onerror="this.style.display='none'">
-    <div class="eyebrow">DUPR Night Analytics — Season 2</div>
+    <div class="eyebrow" id="eyebrow">DUPR Night Analytics</div>
     <h1 id="welcome">Insights from PickleBee by 71</h1>
     <div class="toolbar">
       <button class="btn cyan" onclick="loadDashboard()">Reload data</button>
@@ -346,6 +346,31 @@ input[disabled],select.pay-locked{opacity:.65;cursor:not-allowed;}
    ============================================================ */
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzeZaUXvfqsA1oVqwwnSxdn_JJrYnCJQ5-3vA0-TCJSjMZUP2tRMEl-PawqlxZ5opGbXg/exec";
 
+/* ---- season labeling — mirrors Code.gs's SEASON_BOUNDARIES exactly.
+   Only used to LABEL weeks; keep this table in sync with the backend
+   whenever a new season is added. ---- */
+const SEASON_BOUNDARIES = [
+  {season:1, startWeek:1},
+  {season:2, startWeek:14},
+  {season:3, startWeek:29},
+];
+function getSeasonInfo(weekNum){
+  let cur=SEASON_BOUNDARIES[0];
+  for(const b of SEASON_BOUNDARIES){ if(weekNum>=b.startWeek) cur=b; else break; }
+  return {season:cur.season, seasonWeek:weekNum-cur.startWeek+1};
+}
+// Season 1/2 weeks intentionally keep showing as plain "Week N" — only
+// Season 3 onward gets the "Season N, Week M" treatment.
+function weekLabelFor(weekNum){
+  const s=getSeasonInfo(weekNum);
+  return s.season>=3 ? ('Season '+s.season+', Week '+s.seasonWeek) : ('Week '+weekNum);
+}
+function updateEyebrow2(weekNum){
+  const s=getSeasonInfo(weekNum);
+  const el=document.getElementById('eyebrow');
+  if(el) el.textContent='DUPR Night Analytics, Season '+s.season;
+}
+
 let DASH = null;
 let LAST_DRAW = null;
 let CURRENT_DRAW_KEY = null;
@@ -387,8 +412,10 @@ async function loadDashboard(){
     const res=await fetch(BACKEND_URL+'?action=dashboard'+weekParam);
     DASH=await res.json();
     if(SELECTED_WEEK===null) SELECTED_WEEK=DASH.week; // first load — lock onto whatever the backend says is current
+    updateEyebrow2(DASH.currentWeek!=null?DASH.currentWeek:DASH.week);
+    const weekLabel=weekLabelFor(DASH.week);
     document.getElementById('welcome').innerHTML=
-      `Insights from the <span class="hl">Week ${DASH.week}</span> of DUPR at PickleBee by 71`;
+      `Insights from the <span class="hl">${weekLabel}</span> of DUPR at PickleBee by 71`;
     updateRegToggleBtn();
     populateWeekDropdown();
     renderCardGrid();
@@ -428,7 +455,7 @@ function populateWeekDropdown(){
   dd.innerHTML='';
   for(let w=WEEK_HISTORY_START; w<=DASH.currentWeek; w++){
     const opt=document.createElement('option');
-    opt.value=w; opt.textContent='Week '+w+(w===DASH.currentWeek?' (current)':'');
+    opt.value=w; opt.textContent=weekLabelFor(w)+(w===DASH.currentWeek?' (current)':'');
     if(w===DASH.week) opt.selected=true;
     dd.appendChild(opt);
   }
@@ -497,7 +524,7 @@ function renderDetail(){
   if(isPastWeek()){
     const banner=document.createElement('div');
     banner.className='past-week-banner';
-    banner.textContent='Viewing Week '+DASH.week+' (past week) — registrations, DUPR, and slot changes are locked. Payment status can still be corrected if needed.';
+    banner.textContent='Viewing '+weekLabelFor(DASH.week)+' (past week) — registrations, DUPR, and slot changes are locked. Payment status can still be corrected if needed.';
     container.appendChild(banner);
   }
   container.appendChild(buildScheduleEditor(key,c));
@@ -847,7 +874,7 @@ function renderCfgPopup(){
 
   document.getElementById('cfgSheet').innerHTML=`
     <h2>Draw Configuration</h2>
-    <div class="msub">${c.label} · Week ${DASH.week}</div>
+    <div class="msub">${c.label} · ${weekLabelFor(DASH.week)}</div>
     <div class="cfgtotal">Total registered players: <b>${total}</b></div>
     <h3>Number of Groups</h3>
     <div class="segg">
@@ -972,7 +999,7 @@ function renderGroupsPopup(){
   const d=GROUPS_DRAFT; if(!d) return;
 
   let html=`<h2>${d.label} — Groups Preview</h2>
-    <div class="meta">Week ${d.week} · ${d.numGroups} group(s) · ${d.numFinals} final(s)${d.hasQF?(d.numGroups===1?' · with Quarterfinals ('+d.qfSeedMethod.charAt(0).toUpperCase()+d.qfSeedMethod.slice(1)+' QF / '+d.sfSeedMethod.charAt(0).toUpperCase()+d.sfSeedMethod.slice(1)+' SF)':' · with Quarterfinals (fixed bracket)'):''}${d.type!=='mixed'?' · '+d.seedMethod.charAt(0).toUpperCase()+d.seedMethod.slice(1)+' seeding':''}</div>
+    <div class="meta">${weekLabelFor(d.week)} · ${d.numGroups} group(s) · ${d.numFinals} final(s)${d.hasQF?(d.numGroups===1?' · with Quarterfinals ('+d.qfSeedMethod.charAt(0).toUpperCase()+d.qfSeedMethod.slice(1)+' QF / '+d.sfSeedMethod.charAt(0).toUpperCase()+d.sfSeedMethod.slice(1)+' SF)':' · with Quarterfinals (fixed bracket)'):''}${d.type!=='mixed'?' · '+d.seedMethod.charAt(0).toUpperCase()+d.seedMethod.slice(1)+' seeding':''}</div>
     <div class="notebox" style="border-left:4px solid var(--cyan);">
       Click two players/pairs below, then press Swap to exchange their groups.
       Nothing is final yet — press <b>Generate Draw</b> when you're happy with the groups.
@@ -1088,7 +1115,7 @@ async function finalizeGenerateDraw(){
 function renderDrawPreview(d,otp,key){
   const c=DASH.categories[key];
   let html=`<h2>${d.label} - Draw Preview</h2>
-    <div class="meta">Week ${d.week} · ${d.structure} · ${d.numGroups} group(s) · ${d.numFinals} final(s)${d.seedMethod?' · '+d.seedMethod.charAt(0).toUpperCase()+d.seedMethod.slice(1)+' seeding':''}</div>
+    <div class="meta">${weekLabelFor(d.week)} · ${d.structure} · ${d.numGroups} group(s) · ${d.numFinals} final(s)${d.seedMethod?' · '+d.seedMethod.charAt(0).toUpperCase()+d.seedMethod.slice(1)+' seeding':''}</div>
     <div class="otp-banner">Referee access code<b>${otp}</b>
       <span>Share this with referees. Valid for this category all week.</span></div>
     <div class="notebox" style="border-left:4px solid var(--cyan);">
@@ -1200,7 +1227,7 @@ async function exportDuprCsv(key){
 }
 
 function renderBracketReadOnly(d){
-  let html=`<h2>${d.label} — Results</h2><div class="meta">Week ${d.week} · ${d.structure}</div>`;
+  let html=`<h2>${d.label} — Results</h2><div class="meta">${weekLabelFor(d.week)} · ${d.structure}</div>`;
 
   html+=`<h3>Group Standings</h3>`;
   d.groups.forEach(g=>{
@@ -1312,7 +1339,7 @@ async function buildAndDownloadXlsx(d){
   const headerColor=isSingles?XLSX_CYAN:XLSX_GREEN;
   const catInfo=DASH.categories[CURRENT_DRAW_KEY]||{};
   const dayFull=catInfo.dayName?(catInfo.dayName.charAt(0).toUpperCase()+catInfo.dayName.slice(1)):'';
-  const eventTitle=d.label+' — Week '+d.week+(dayFull?(' — '+dayFull):'')+(catInfo.date?(', '+catInfo.date):'');
+  const eventTitle=d.label+' — '+weekLabelFor(d.week)+(dayFull?(' — '+dayFull):'')+(catInfo.date?(', '+catInfo.date):'');
 
   const fill=(hex)=>({fgColor:{rgb:hex}});
   const cellS=(v,style)=>({v:v==null?'':v, t:(typeof v==='number'?'n':'s'), s:style||{}});
