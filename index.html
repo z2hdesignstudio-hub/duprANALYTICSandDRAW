@@ -229,6 +229,10 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 .reg-toggle-btn:hover{transform:translateY(-2px);}
 .reg-toggle-btn.is-open{background:linear-gradient(135deg,var(--lime),var(--lime-deep));color:var(--ink);}
 .reg-toggle-btn.is-closed{background:linear-gradient(135deg,var(--orange),#c26400);}
+.early-btn{margin-left:auto;}
+.early-btn + .reg-toggle-btn{margin-left:0;}
+.reg-toggle-btn.early-off{background:linear-gradient(135deg,#ffffff,#e4e9f2);color:var(--ink);}
+.reg-toggle-btn.early-on{background:linear-gradient(135deg,var(--cyan,#01F6D8),#12b9a3);color:var(--ink);}
 .week-selector select{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.98rem;
   color:var(--ink);padding:10px 16px;border:none;border-radius:var(--r-sm);
   background:var(--surface);box-shadow:var(--clay-sm);outline:none;cursor:pointer;}
@@ -291,6 +295,7 @@ input[disabled],select.pay-locked{opacity:.65;cursor:not-allowed;}
       <button class="nav-arrow" onclick="prevWeek()">‹</button>
       <select id="weekDropdown" onchange="onWeekDropdownChange()"></select>
       <button class="nav-arrow" onclick="nextWeek()">›</button>
+      <button class="reg-toggle-btn early-btn early-off" id="earlyOpenBtn" onclick="toggleEarlyOpen()">Open next week early</button>
       <button class="reg-toggle-btn" id="regToggleBtn" onclick="toggleRegistrationOpen()">Registration: …</button>
     </div>
     <div class="grid2" id="catGrid2"></div>
@@ -378,7 +383,7 @@ let CURRENT_DETAIL_KEY = null;
 const WEEK_HISTORY_START = 16; // history browsing goes back this far, no further
 let SELECTED_WEEK = null; // null = not yet determined; locks onto the current week on first load
 
-function isPastWeek(){ return DASH && DASH.week !== DASH.currentWeek; }
+function isPastWeek(){ return DASH && DASH.week < DASH.currentWeek; } // next week (early-open) is NOT 'past'
 
 // PERF: debounce storage for cell saves
 const _debounce = {};
@@ -387,6 +392,8 @@ const _debounce = {};
    backend — see getEffectiveSchedule in Code.gs) ---- */
 function dayAbbrev(dayName){ return dayName ? (dayName.charAt(0).toUpperCase()+dayName.slice(1,3)) : ''; }
 function ruleText(c){
+  if(c.tierMin!=null && c.tierMax!=null)
+    return 'DUPR '+Number(c.tierMin).toFixed(3)+(c.tierStrictMax?' to below ':' to ')+Number(c.tierMax).toFixed(3);
   if(c.tierMax!=null && c.tierMin==null)
     return c.tierStrictMax ? ('DUPR below '+Number(c.tierMax).toFixed(3)) : ('DUPR '+Number(c.tierMax).toFixed(3)+' & below');
   if(c.tierMin!=null && c.tierMax==null)
@@ -417,6 +424,7 @@ async function loadDashboard(){
     document.getElementById('welcome').innerHTML=
       `Insights from the <span class="hl">${weekLabel}</span> of DUPR at PickleBee by 71`;
     updateRegToggleBtn();
+    updateEarlyOpenBtn();
     populateWeekDropdown();
     renderCardGrid();
     if(CURRENT_DETAIL_KEY && document.getElementById('screenDetail').classList.contains('active')){
@@ -434,6 +442,36 @@ function updateRegToggleBtn(){
   btn.textContent = open ? 'Registration: OPEN' : 'Registration: CLOSED';
   btn.className = 'reg-toggle-btn ' + (open ? 'is-open' : 'is-closed');
 }
+/* ---- Open NEXT week's registration early (one-off; self-expires when the week rolls over) ---- */
+function updateEarlyOpenBtn(){
+  const btn=document.getElementById('earlyOpenBtn'); if(!btn||!DASH) return;
+  const on=!!DASH.earlyOpen;
+  btn.textContent = on ? ('Next week open early: ON ('+weekLabelFor(DASH.registrationWeek)+')') : 'Open next week early';
+  btn.className = 'reg-toggle-btn early-btn ' + (on ? 'early-on' : 'early-off');
+}
+async function toggleEarlyOpen(){
+  const on=!!DASH.earlyOpen;
+  const nextLbl=weekLabelFor(DASH.currentWeek+1);
+  const msg = on
+    ? 'Switch Website 1 back to the current week ('+weekLabelFor(DASH.currentWeek)+')?\n\nRegistrations already taken for '+nextLbl+' are kept.'
+    : 'Open '+nextLbl+' registration on Website 1 right now?\n\nWebsite 1 will switch to '+nextLbl+' immediately and stop showing '+weekLabelFor(DASH.currentWeek)+'. It switches itself over automatically when the new week starts on Saturday.';
+  if(!confirm(msg)) return;
+  try{
+    let res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'setEarlyOpen',open:!on})});
+    let out=await res.json();
+    if(!out.ok && out.needsConfirm){
+      const list=(out.stillOpen||[]).map(x=>'  - '+x).join('\n');
+      if(!confirm('These '+weekLabelFor(DASH.currentWeek)+' events are still taking registrations:\n\n'+list+'\n\nOpening next week now will hide them from Website 1 (players already registered are unaffected). Continue?')) return;
+      res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'setEarlyOpen',open:true,force:true})});
+      out=await res.json();
+    }
+    if(out.ok){
+      toast(out.earlyOpen ? (nextLbl+' registration is now open') : 'Back to the current week');
+      await loadDashboard();
+    }else toast(out.error||'Could not update');
+  }catch(e){ toast('Network error'); }
+}
+
 async function toggleRegistrationOpen(){
   const open=DASH.registrationOpen!==false;
   const goingTo=!open;
@@ -453,9 +491,10 @@ async function toggleRegistrationOpen(){
 function populateWeekDropdown(){
   const dd=document.getElementById('weekDropdown'); if(!dd) return;
   dd.innerHTML='';
-  for(let w=WEEK_HISTORY_START; w<=DASH.currentWeek; w++){
+  const maxWeek = Math.max(DASH.currentWeek, DASH.registrationWeek||DASH.currentWeek);
+  for(let w=WEEK_HISTORY_START; w<=maxWeek; w++){
     const opt=document.createElement('option');
-    opt.value=w; opt.textContent=weekLabelFor(w)+(w===DASH.currentWeek?' (current)':'');
+    opt.value=w; opt.textContent=weekLabelFor(w)+(w===DASH.currentWeek?' (current)':(w>DASH.currentWeek?' (registration open)':''));
     if(w===DASH.week) opt.selected=true;
     dd.appendChild(opt);
   }
@@ -465,7 +504,7 @@ function onWeekDropdownChange(){
   loadDashboard();
 }
 function prevWeek(){ if(SELECTED_WEEK>WEEK_HISTORY_START){ SELECTED_WEEK--; loadDashboard(); } }
-function nextWeek(){ if(DASH && SELECTED_WEEK<DASH.currentWeek){ SELECTED_WEEK++; loadDashboard(); } }
+function nextWeek(){ if(DASH && SELECTED_WEEK<Math.max(DASH.currentWeek,DASH.registrationWeek||DASH.currentWeek)){ SELECTED_WEEK++; loadDashboard(); } }
 
 function renderCardGrid(){
   const grid=document.getElementById('catGrid2'); grid.innerHTML='';
