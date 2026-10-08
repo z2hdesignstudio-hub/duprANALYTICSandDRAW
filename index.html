@@ -229,10 +229,20 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 .reg-toggle-btn:hover{transform:translateY(-2px);}
 .reg-toggle-btn.is-open{background:linear-gradient(135deg,var(--lime),var(--lime-deep));color:var(--ink);}
 .reg-toggle-btn.is-closed{background:linear-gradient(135deg,var(--orange),#c26400);}
-.early-btn{margin-left:auto;}
-.early-btn + .reg-toggle-btn{margin-left:0;}
-.reg-toggle-btn.early-off{background:linear-gradient(135deg,#ffffff,#e4e9f2);color:var(--ink);}
-.reg-toggle-btn.early-on{background:linear-gradient(135deg,var(--cyan,#01F6D8),#12b9a3);color:var(--ink);}
+.early-switch{margin-left:auto;display:flex;align-items:center;gap:12px;border:none;cursor:pointer;text-align:left;
+  font-family:'Fredoka',sans-serif;background:var(--surface);box-shadow:var(--clay-sm);border-radius:var(--r-sm);
+  padding:8px 14px;color:var(--ink);transition:transform .15s;}
+.early-switch:hover:not(:disabled){transform:translateY(-2px);}
+.early-switch .es-text{display:flex;flex-direction:column;line-height:1.2;}
+.early-switch .es-text b{font-weight:600;font-size:.92rem;}
+.early-switch .es-text small{font-family:'Nunito',sans-serif;font-weight:700;font-size:.72rem;color:var(--muted);}
+.es-track{flex:none;width:48px;height:27px;border-radius:99px;background:#cdd7cd;box-shadow:var(--clay-in);position:relative;transition:background .2s;}
+.es-knob{position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.28);transition:transform .2s;}
+.early-switch.on .es-track{background:var(--cyan);}
+.early-switch.on .es-knob{transform:translateX(21px);}
+.early-switch.on .es-text small{color:#078a8a;}
+.early-switch:disabled{opacity:.65;cursor:not-allowed;}
+.early-switch + .reg-toggle-btn{margin-left:0;}
 .week-selector select{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.98rem;
   color:var(--ink);padding:10px 16px;border:none;border-radius:var(--r-sm);
   background:var(--surface);box-shadow:var(--clay-sm);outline:none;cursor:pointer;}
@@ -295,7 +305,10 @@ input[disabled],select.pay-locked{opacity:.65;cursor:not-allowed;}
       <button class="nav-arrow" onclick="prevWeek()">‹</button>
       <select id="weekDropdown" onchange="onWeekDropdownChange()"></select>
       <button class="nav-arrow" onclick="nextWeek()">›</button>
-      <button class="reg-toggle-btn early-btn early-off" id="earlyOpenBtn" onclick="toggleEarlyOpen()">Open next week early</button>
+      <button type="button" role="switch" aria-checked="false" class="early-switch" id="earlyOpenBtn" onclick="toggleEarlyOpen()">
+        <span class="es-text"><b>Open next week early</b><small id="earlyOpenHint">Loading…</small></span>
+        <span class="es-track"><span class="es-knob"></span></span>
+      </button>
       <button class="reg-toggle-btn" id="regToggleBtn" onclick="toggleRegistrationOpen()">Registration: …</button>
     </div>
     <div class="grid2" id="catGrid2"></div>
@@ -445,9 +458,17 @@ function updateRegToggleBtn(){
 /* ---- Open NEXT week's registration early (one-off; self-expires when the week rolls over) ---- */
 function updateEarlyOpenBtn(){
   const btn=document.getElementById('earlyOpenBtn'); if(!btn||!DASH) return;
+  const hint=document.getElementById('earlyOpenHint');
+  const supported = DASH.registrationWeek!==undefined; // older Code.gs doesn't send this field
   const on=!!DASH.earlyOpen;
-  btn.textContent = on ? ('Next week open early: ON ('+weekLabelFor(DASH.registrationWeek)+')') : 'Open next week early';
-  btn.className = 'reg-toggle-btn early-btn ' + (on ? 'early-on' : 'early-off');
+  btn.classList.toggle('on',on);
+  btn.setAttribute('aria-checked',on?'true':'false');
+  btn.disabled=!supported;
+  if(hint){
+    hint.textContent = !supported ? 'Redeploy the latest Code.gs to enable'
+      : on ? ('ON: Website 1 is taking '+weekLabelFor(DASH.registrationWeek)+' sign-ups')
+           : ('OFF: Website 1 shows '+weekLabelFor(DASH.currentWeek));
+  }
 }
 async function toggleEarlyOpen(){
   const on=!!DASH.earlyOpen;
