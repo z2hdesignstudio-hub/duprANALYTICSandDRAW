@@ -97,6 +97,27 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
   box-shadow:var(--clay);opacity:0;pointer-events:none;transition:opacity .3s;z-index:80;}
 .toast.show{opacity:1;}
 
+
+/* ---- Post update (WhatsApp) ---- */
+.post-btn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.9rem;color:#fff;border:none;
+  border-radius:var(--r-sm);padding:10px 16px;cursor:pointer;box-shadow:var(--clay-sm);
+  background:linear-gradient(135deg,#2fd06b,#128c4a);transition:transform .15s;display:inline-flex;align-items:center;gap:8px;}
+.post-btn:hover:not(:disabled){transform:translateY(-2px);}
+.post-btn:disabled{opacity:.5;cursor:not-allowed;}
+.post-scope{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 14px;}
+.post-chip{font-family:'Nunito',sans-serif;font-weight:800;font-size:.8rem;color:var(--ink);border:none;cursor:pointer;
+  background:var(--surface);box-shadow:var(--clay-sm);border-radius:99px;padding:8px 14px;}
+.post-chip.on{background:linear-gradient(135deg,var(--cyan),var(--lime-deep));color:#fff;}
+.post-opts{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-weight:700;font-size:.88rem;}
+.post-opts label{display:inline-flex;align-items:center;gap:7px;cursor:pointer;}
+#postText{width:100%;min-height:260px;resize:vertical;border:none;outline:none;border-radius:var(--r-sm);
+  background:var(--surface-2);box-shadow:var(--clay-in);padding:14px;color:var(--ink);
+  font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;font-size:.86rem;line-height:1.5;}
+.post-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center;}
+.post-actions .grow{flex:1;}
+#postModal{padding-bottom:90px;}
+.post-note{font-size:.76rem;font-weight:700;color:var(--muted);margin-top:10px;}
+
 /* Draw config popup */
 .modal{position:fixed;inset:0;background:rgba(28,42,31,.6);backdrop-filter:blur(5px);
   display:none;z-index:70;padding:22px 16px;overflow:auto;align-items:flex-start;justify-content:center;}
@@ -305,6 +326,7 @@ input[disabled],select.pay-locked{opacity:.65;cursor:not-allowed;}
       <button class="nav-arrow" onclick="prevWeek()">‹</button>
       <select id="weekDropdown" onchange="onWeekDropdownChange()"></select>
       <button class="nav-arrow" onclick="nextWeek()">›</button>
+      <button type="button" class="post-btn" id="postUpdateBtn" onclick="openPostUpdate()">📣 Post update</button>
       <button type="button" role="switch" aria-checked="false" class="early-switch" id="earlyOpenBtn" onclick="toggleEarlyOpen()">
         <span class="es-text"><b>Open next week early</b><small id="earlyOpenHint">Loading…</small></span>
         <span class="es-track"><span class="es-knob"></span></span>
@@ -325,6 +347,27 @@ input[disabled],select.pay-locked{opacity:.65;cursor:not-allowed;}
     </div>
     <div id="detailContent"><div class="loading">Loading…</div></div>
   </section>
+</div>
+
+<!-- Post update (WhatsApp message builder) -->
+<div class="modal" id="postModal" onclick="if(event.target===this)closePostUpdate()">
+  <div class="msheet">
+    <h2>Post update to WhatsApp</h2>
+    <div class="msub" id="postSub"></div>
+    <div class="post-scope" id="postScope"></div>
+    <div class="post-opts">
+      <label><input type="checkbox" id="postNames" checked onchange="buildPostText()"> Show player names</label>
+      <label><input type="checkbox" id="postLink" checked onchange="buildPostText()"> Include registration link</label>
+    </div>
+    <textarea id="postText" spellcheck="false"></textarea>
+    <div class="post-actions">
+      <button class="post-btn" type="button" onclick="copyPostText()">Copy message</button>
+      <button class="post-btn" type="button" onclick="openPostWhatsApp()">Open WhatsApp</button>
+      <span class="grow"></span>
+      <button class="nav-arrow" type="button" onclick="closePostUpdate()">Close</button>
+    </div>
+    <div class="post-note">Open WhatsApp lets you pick the group and press send. You can edit the text above first. Changing the options above rebuilds it.</div>
+  </div>
 </div>
 
 <!-- Draw config popup -->
@@ -438,6 +481,7 @@ async function loadDashboard(){
       `Insights from the <span class="hl">${weekLabel}</span> of DUPR at PickleBee by 71`;
     updateRegToggleBtn();
     updateEarlyOpenBtn();
+    updatePostBtn();
     populateWeekDropdown();
     renderCardGrid();
     if(CURRENT_DETAIL_KEY && document.getElementById('screenDetail').classList.contains('active')){
@@ -731,6 +775,7 @@ function buildCatCard(key){
   const exportBtnHtml = c.drawCommitted
     ? `<button class="drawbtn" onclick="exportDuprCsv('${key}')">Export to DUPR (.csv)</button>`
     : '';
+  const postBtnHtml = past ? '' : `<button class="post-btn" onclick="openPostUpdate('${key}')">📣 Post update</button>`;
   const addBtnHtml = past ? '' : `<button class="addbtn" onclick="addSlot('${key}')">+ ${addLabel}</button>`;
   card.innerHTML=`
     <div class="cattop">
@@ -742,6 +787,7 @@ function buildCatCard(key){
       ${addBtnHtml}
       ${drawBtnHtml}
       ${exportBtnHtml}
+      ${postBtnHtml}
     </div>`;
   return card;
 }
@@ -1484,6 +1530,128 @@ async function buildAndDownloadXlsx(d){
 
 /* ======================== toast ======================== */
 let toastT;
+
+/* ======================== Post update (WhatsApp) ======================== */
+const REG_SITE_LABEL='pb71.org';
+let POST_SCOPE='all';
+function waClean(t){ return String(t==null?'':t).replace(/[*_~`]/g,'').replace(/\s+/g,' ').trim(); }
+function waTime(t){ return String(t||'').replace(/\s*([ap])\.?m\.?/i,' $1m').replace(/\s+/g,' ').trim().toLowerCase(); }
+function waDay(c){ return (dayAbbrev(c.dayName)+' '+String(c.date||'').replace(/\s+\d{4}$/,'')).trim(); }
+function waCatName(c){ return String(c.label||'').replace(/\s+-\s+/,' · '); }
+function waLockText(c){
+  if(!c.lockAt) return '';
+  const d=new Date(c.lockAt); if(isNaN(d)) return '';
+  let t=''; try{ t=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Colombo'}).toLowerCase(); }catch(e){ t=d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}).toLowerCase(); }
+  return t;
+}
+function waIsClosed(c){
+  if(DASH && DASH.registrationOpen===false) return 'paused';
+  if(c.lockAt){ const d=new Date(c.lockAt); if(!isNaN(d) && Date.now()>=d.getTime()) return 'closed'; }
+  return '';
+}
+function waEntries(c){
+  const out=[];
+  (c.rows||[]).forEach(r=>{
+    const p1=waClean(r.player1), p2=waClean(r.player2);
+    if(!p1 && !p2) return;
+    if(c.type==='singles') out.push(p1||p2);
+    else out.push(p1&&p2 ? (p1+' & '+p2) : ((p1||p2)+' & (partner TBC)'));
+  });
+  return out;
+}
+function waSpots(c){
+  const left=Math.max(0,(c.limit||0)-(c.filled||0));
+  if(left===0) return '*FULL* ('+c.filled+'/'+c.limit+')';
+  const hot = left<=3 ? ' — *'+left+' left!*' : ' — '+left+' left';
+  return c.filled+' of '+c.limit+' spots filled'+hot;
+}
+function buildCategoryMessage(key,showNames,showLink){
+  const c=DASH.categories[key]; const L=[];
+  const entries=waEntries(c);
+  L.push('🐝 *'+waCatName(c)+'*');
+  L.push('📅 '+waDay(c)+' · '+waTime(c.time));
+  L.push('👥 '+waSpots(c));
+  if(showNames){
+    L.push('');
+    if(entries.length) entries.forEach((e,i)=>L.push((i+1)+'. '+e));
+    else L.push('No one yet. Be the first! 🙌');
+  }
+  const closed=waIsClosed(c), full=(c.limit||0)>0 && (c.filled||0)>=c.limit;
+  if(showLink){
+    L.push('');
+    if(closed==='paused') L.push('Registration is paused for now.');
+    else if(closed==='closed') L.push('Registration for this event has closed.');
+    else if(full) L.push('This one is full. Check '+REG_SITE_LABEL+' for other events.');
+    else { const lt=waLockText(c); L.push('Register: '+REG_SITE_LABEL+(lt?' (closes '+lt+')':'')); }
+  }
+  return L.join('\n');
+}
+function buildDigestMessage(showNames,showLink){
+  const L=[]; const keys=sortedCategoryKeys();
+  L.push('🐝 *PickleBee DUPR Night · '+weekLabelFor(DASH.week)+'*');
+  L.push("Who's in so far:");
+  let lastDay=null;
+  keys.forEach(key=>{
+    const c=DASH.categories[key];
+    if(c.day!==lastDay){ L.push(''); L.push('📅 *'+waDay(c)+'*'); lastDay=c.day; }
+    const full=(c.limit||0)>0 && (c.filled||0)>=c.limit;
+    const left=Math.max(0,(c.limit||0)-(c.filled||0));
+    const status = full ? 'FULL' : (c.filled+'/'+c.limit+(left<=3?' · *'+left+' left!*':''));
+    L.push('▪ '+waCatName(c)+' · '+waTime(c.time)+' · '+status);
+    if(showNames){
+      const e=waEntries(c);
+      if(e.length) L.push('   '+e.join(', '));
+    }
+  });
+  if(showLink){
+    L.push('');
+    if(DASH.registrationOpen===false) L.push('Registration is paused for now.');
+    else L.push('Register or check your slot: '+REG_SITE_LABEL);
+  }
+  return L.join('\n');
+}
+function renderPostScope(){
+  const wrap=document.getElementById('postScope'); wrap.innerHTML='';
+  const mk=(id,label)=>{ const b=document.createElement('button'); b.type='button';
+    b.className='post-chip'+(POST_SCOPE===id?' on':''); b.textContent=label;
+    b.onclick=()=>{ POST_SCOPE=id; renderPostScope(); buildPostText(); }; wrap.appendChild(b); };
+  mk('all','Whole week');
+  sortedCategoryKeys().forEach(k=>{ const c=DASH.categories[k]; mk(k, waCatName(c)+' · '+dayAbbrev(c.dayName)); });
+}
+function buildPostText(){
+  if(!DASH) return;
+  const names=document.getElementById('postNames').checked, link=document.getElementById('postLink').checked;
+  const key=POST_SCOPE;
+  document.getElementById('postText').value = (key!=='all' && DASH.categories[key])
+    ? buildCategoryMessage(key,names,link) : buildDigestMessage(names,link);
+}
+function openPostUpdate(key){
+  if(!DASH) return;
+  if(isPastWeek()){ toast('Past week: nothing to post'); return; }
+  POST_SCOPE = (typeof key==='string' && DASH.categories[key]) ? key : 'all';
+  document.getElementById('postSub').textContent=weekLabelFor(DASH.week)+' · live from current registrations';
+  renderPostScope(); buildPostText();
+  document.getElementById('postModal').classList.add('show');
+}
+function closePostUpdate(){ document.getElementById('postModal').classList.remove('show'); }
+function updatePostBtn(){
+  const b=document.getElementById('postUpdateBtn'); if(!b) return;
+  b.disabled = !DASH || isPastWeek();
+  b.title = b.disabled ? 'Only available for the current or upcoming week' : 'Build a WhatsApp message from the live registrations';
+}
+async function copyPostText(){
+  const ta=document.getElementById('postText'); const text=ta.value;
+  try{ await navigator.clipboard.writeText(text); toast('Message copied'); return; }catch(e){}
+  try{ ta.focus(); ta.select(); document.execCommand('copy'); ta.setSelectionRange(0,0); toast('Message copied'); }
+  catch(e){ toast('Copy failed, select the text and copy it'); }
+}
+function openPostWhatsApp(){
+  const text=document.getElementById('postText').value;
+  const url='https://wa.me/?text='+encodeURIComponent(text);
+  if(url.length>6000){ toast('Message is long. Use Copy and paste it into WhatsApp'); return; }
+  window.open(url,'_blank','noopener');
+}
+
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1900); }
 
