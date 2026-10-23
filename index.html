@@ -115,6 +115,10 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
   font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;font-size:.86rem;line-height:1.5;}
 .post-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center;}
 .post-actions .grow{flex:1;}
+.post-notewrap{margin-bottom:12px;}
+.post-notewrap label{display:block;font-weight:800;font-size:.8rem;color:var(--muted);margin-bottom:6px;}
+#postNote{width:100%;border:none;outline:none;border-radius:var(--r-sm);background:var(--surface-2);box-shadow:var(--clay-in);padding:10px 14px;
+  color:var(--ink);font-family:'Nunito',sans-serif;font-weight:700;font-size:.9rem;resize:vertical;}
 #postModal{padding-bottom:90px;}
 .post-note{font-size:.76rem;font-weight:700;color:var(--muted);margin-top:10px;}
 
@@ -377,8 +381,10 @@ input[disabled],select.pay-locked{opacity:.65;cursor:not-allowed;}
     <div class="post-scope" id="postScope"></div>
     <div class="post-opts">
       <label><input type="checkbox" id="postNames" checked onchange="buildPostText()"> Show player names</label>
-      <label><input type="checkbox" id="postLink" checked onchange="buildPostText()"> Include registration link</label>
+      <label><input type="checkbox" id="postLink" onchange="buildPostText()"> Include registration link</label>
     </div>
+    <div class="post-notewrap" id="postNoteWrap"><label for="postNote">Schedule note (optional), added under the title, for example group times</label>
+      <textarea id="postNote" rows="2" placeholder="Group A and B 6:30pm&#10;Group C &amp; D 8:30pm" oninput="buildPostText()"></textarea></div>
     <textarea id="postText" spellcheck="false"></textarea>
     <div class="post-actions">
       <button class="post-btn" type="button" onclick="copyPostText()">Copy message</button>
@@ -1593,26 +1599,51 @@ function waSpots(c){
   const hot = left<=3 ? ' — *'+left+' left!*' : ' — '+left+' left';
   return c.filled+' of '+c.limit+' spots filled'+hot;
 }
+// First clock time in the event's time text, e.g. "7:00 p.m onwards" -> "7pm", "6:30 p.m" -> "6:30pm"
+function waStart(c){
+  const m=/(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m/i.exec(String(c.time||''));
+  if(!m) return waTime(c.time).replace(/\s*onwards/,'');
+  return m[1]+(m[2]&&m[2]!=='00'?':'+m[2]:'')+m[3].toLowerCase()+'m';
+}
+// "today" when the event date is today in Sri Lanka, otherwise "on Mon 19 Oct"
+function waWhen(c){
+  const M=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const m=/^(\d{1,2})\s+([A-Za-z]{3})/.exec(String(c.date||''));
+  if(m){
+    let parts; try{ parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Colombo',day:'numeric',month:'numeric'}).formatToParts(new Date()); }catch(e){ parts=null; }
+    if(parts){
+      const d=Number(parts.find(x=>x.type==='day').value), mo=Number(parts.find(x=>x.type==='month').value);
+      if(d===Number(m[1]) && M.indexOf(m[2].toLowerCase())===mo-1) return 'today';
+    }
+  }
+  return 'on '+waDay(c);
+}
+function waNoun(n){ return n===1?'spot':'spots'; }
+function waNumWord(n){ return ({1:'one',2:'two',3:'three',4:'four',5:'five'})[n]||String(n); }
 function buildCategoryMessage(key,showNames,showLink){
   const c=DASH.categories[key]; const L=[];
-  const entries=waEntries(c);
-  L.push('🐝 *'+waCatName(c)+'*');
-  L.push('📅 '+waDay(c)+' · '+waTime(c.time));
-  L.push('👥 '+waSpots(c));
+  const entries=waEntries(c), when=waWhen(c), name=waCatName(c).replace(' · ',' ');
+  const noteEl=document.getElementById('postNote'); const note=noteEl?noteEl.value.trim():'';
+  const noteLines=note?note.split('\n').map(x=>x.trim()).filter(Boolean):[];
+  // Header: "<Event> listings for today." then the optional schedule note
+  L.push(name+' listings for '+when.replace(/^on /,'')+'.'+(noteLines.length?' '+noteLines[0]:''));
+  noteLines.slice(1).forEach(x=>L.push(x));
   if(showNames){
     L.push('');
-    if(entries.length) entries.forEach((e,i)=>L.push((i+1)+'. '+e));
-    else L.push('No one yet. Be the first! 🙌');
+    const total=Math.max(c.limit||0,entries.length);
+    for(let i=0;i<total;i++) L.push((i+1)+'.'+(entries[i]?' '+entries[i]:''));
   }
-  const closed=waIsClosed(c), full=(c.limit||0)>0 && (c.filled||0)>=c.limit;
-  if(showLink){
-    L.push('');
-    if(closed==='paused') L.push('Registration is paused for now.');
-    else if(closed==='hold') L.push('This event is on hold this week.');
-    else if(closed==='closed') L.push('Registration for this event has closed.');
-    else { const lt=waLockText(c); L.push('Register: '+REG_SITE_LABEL+(lt?' (closes '+lt+')':'')); }
+  const closed=waIsClosed(c), left=Math.max(0,(c.limit||0)-(c.filled||0));
+  L.push('');
+  if(closed==='paused') L.push('Registration is paused for now.');
+  else if(closed==='hold') L.push('This event is on hold this week.');
+  else if(closed==='closed') L.push('Registration for '+name+' has closed.');
+  else if(left===0) L.push(name+' is now full.');
+  else L.push('We have '+waNumWord(left)+' '+waNoun(left)+' left for '+name+' '+when+' starting from '+waStart(c));
+  if(showLink && !closed){
+    const lt=waLockText(c); L.push('Register: '+REG_SITE_LABEL+(lt?' (closes '+lt+')':''));
   }
-  return L.join('\n');
+  return L.join('\n').replace(/\n{3,}/g,'\n\n');
 }
 function buildDigestMessage(showNames,showLink){
   const L=[]; const keys=sortedCategoryKeys();
@@ -1639,11 +1670,17 @@ function buildDigestMessage(showNames,showLink){
   }
   return L.join('\n');
 }
+function postScopeDefaults(){
+  const single=POST_SCOPE!=='all';
+  document.getElementById('postNoteWrap').style.display=single?'block':'none';
+  document.getElementById('postNote').value='';
+  document.getElementById('postLink').checked=!single;   // single event: no link unless asked; week digest: link on
+}
 function renderPostScope(){
   const wrap=document.getElementById('postScope'); wrap.innerHTML='';
   const mk=(id,label)=>{ const b=document.createElement('button'); b.type='button';
     b.className='post-chip'+(POST_SCOPE===id?' on':''); b.textContent=label;
-    b.onclick=()=>{ POST_SCOPE=id; renderPostScope(); buildPostText(); }; wrap.appendChild(b); };
+    b.onclick=()=>{ POST_SCOPE=id; postScopeDefaults(); renderPostScope(); buildPostText(); }; wrap.appendChild(b); };
   mk('all','Whole week');
   sortedCategoryKeys().forEach(k=>{ const c=DASH.categories[k]; mk(k, waCatName(c)+' · '+dayAbbrev(c.dayName)); });
 }
@@ -1659,7 +1696,7 @@ function openPostUpdate(key){
   if(isPastWeek()){ toast('Past week: nothing to post'); return; }
   POST_SCOPE = (typeof key==='string' && DASH.categories[key]) ? key : 'all';
   document.getElementById('postSub').textContent=weekLabelFor(DASH.week)+' · live from current registrations';
-  renderPostScope(); buildPostText();
+  postScopeDefaults(); renderPostScope(); buildPostText();
   document.getElementById('postModal').classList.add('show');
 }
 function closePostUpdate(){ document.getElementById('postModal').classList.remove('show'); }
