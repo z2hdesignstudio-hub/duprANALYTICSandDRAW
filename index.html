@@ -118,6 +118,25 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 #postModal{padding-bottom:90px;}
 .post-note{font-size:.76rem;font-weight:700;color:var(--muted);margin-top:10px;}
 
+
+/* ---- Event / week hold ---- */
+.hold-btn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.9rem;color:var(--ink);border:none;border-radius:var(--r-sm);
+  padding:10px 16px;cursor:pointer;background:var(--surface);box-shadow:var(--clay-sm);transition:transform .15s;}
+.hold-btn:hover:not(:disabled){transform:translateY(-2px);}
+.hold-btn:disabled{opacity:.5;cursor:not-allowed;}
+.hold-btn.is-held{background:linear-gradient(135deg,var(--lime),var(--lime-deep));}
+.hold-btn.sm{padding:6px 12px;font-size:.8rem;}
+.card2.is-held{opacity:.82;}
+.card2.is-held .card2-title{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:rgba(28,42,31,.35);}
+.hold-tag{position:absolute;top:12px;right:12px;background:var(--ink);color:#fff;font-weight:800;font-size:.68rem;
+  padding:4px 10px;border-radius:10px;box-shadow:var(--clay-sm);z-index:2;letter-spacing:.4px;}
+.card2.is-held .resched-tag{top:42px;}
+.card2.is-held .card2-title{padding-top:22px;}
+.card2-holdrow{margin-top:12px;display:flex;justify-content:flex-end;}
+.hold-banner{background:#fff3d6;box-shadow:var(--clay-in);border-radius:var(--r-sm);padding:12px 16px;font-weight:700;
+  font-size:.88rem;line-height:1.5;margin-bottom:14px;color:#6b4a00;}
+.hold-banner.done{background:var(--surface-2);color:var(--muted);}
+
 /* Draw config popup */
 .modal{position:fixed;inset:0;background:rgba(28,42,31,.6);backdrop-filter:blur(5px);
   display:none;z-index:70;padding:22px 16px;overflow:auto;align-items:flex-start;justify-content:center;}
@@ -326,6 +345,7 @@ input[disabled],select.pay-locked{opacity:.65;cursor:not-allowed;}
       <button class="nav-arrow" onclick="prevWeek()">‹</button>
       <select id="weekDropdown" onchange="onWeekDropdownChange()"></select>
       <button class="nav-arrow" onclick="nextWeek()">›</button>
+      <button type="button" class="hold-btn" id="holdWeekBtn" onclick="toggleWeekHold()">Pause week</button>
       <button type="button" class="post-btn" id="postUpdateBtn" onclick="openPostUpdate()">📣 Post update</button>
       <button type="button" role="switch" aria-checked="false" class="early-switch" id="earlyOpenBtn" onclick="toggleEarlyOpen()">
         <span class="es-text"><b>Open next week early</b><small id="earlyOpenHint">Loading…</small></span>
@@ -482,6 +502,7 @@ async function loadDashboard(){
     updateRegToggleBtn();
     updateEarlyOpenBtn();
     updatePostBtn();
+    updateHoldWeekBtn();
     populateWeekDropdown();
     renderCardGrid();
     if(CURRENT_DETAIL_KEY && document.getElementById('screenDetail').classList.contains('active')){
@@ -579,10 +600,11 @@ function renderCardGrid(){
       ? `<div class="card2-otp">OTP: ${c.otp}</div>`
       : `<div class="card2-otp muted">A draw isn't generated yet</div>`;
     const card=document.createElement('div');
-    card.className='card2';
+    card.className='card2'+(c.paused?' is-held':'');
     card.setAttribute('data-accent',c.accent);
     card.innerHTML=`
       <div class="bar2"></div>
+      ${c.paused?'<div class="hold-tag">ON HOLD</div>':''}
       ${c.overridden?'<div class="resched-tag">Rescheduled</div>':''}
       <div class="card2-title">${c.label}</div>
       <div class="card2-meta"><b>${dayAbbrev(c.dayName)} · ${c.date}</b><br>${c.time}</div>
@@ -590,7 +612,8 @@ function renderCardGrid(){
       <div class="card2-bottom">
         ${otpHtml}
         <div class="fillpill">${c.filled} / ${c.limit} filled</div>
-      </div>`;
+      </div>
+      ${canHold(c)?`<div class="card2-holdrow"><button type="button" class="hold-btn sm${c.paused?' is-held':''}" onclick="event.stopPropagation();toggleEventHold('${key}')">${c.paused?'Resume event':'Pause event'}</button></div>`:''}`;
     card.onclick=()=>openDetail(key);
     grid.appendChild(card);
   });
@@ -631,6 +654,8 @@ function renderDetail(){
     banner.textContent='Viewing '+weekLabelFor(DASH.week)+' (past week) — registrations, DUPR, and slot changes are locked. Payment status can still be corrected if needed.';
     container.appendChild(banner);
   }
+  const hb=holdBannerHtml(c);
+  if(hb){ const d=document.createElement('div'); d.innerHTML=hb; container.appendChild(d.firstChild); }
   container.appendChild(buildScheduleEditor(key,c));
   const card=buildCatCard(key);
   card.id='catcard-'+key;
@@ -776,6 +801,7 @@ function buildCatCard(key){
     ? `<button class="drawbtn" onclick="exportDuprCsv('${key}')">Export to DUPR (.csv)</button>`
     : '';
   const postBtnHtml = past ? '' : `<button class="post-btn" onclick="openPostUpdate('${key}')">📣 Post update</button>`;
+  const holdBtnHtml = canHold(c) ? `<button class="hold-btn${c.paused?' is-held':''}" onclick="toggleEventHold('${key}')">${c.paused?'Resume event':'Pause event'}</button>` : '';
   const addBtnHtml = past ? '' : `<button class="addbtn" onclick="addSlot('${key}')">+ ${addLabel}</button>`;
   card.innerHTML=`
     <div class="cattop">
@@ -788,6 +814,7 @@ function buildCatCard(key){
       ${drawBtnHtml}
       ${exportBtnHtml}
       ${postBtnHtml}
+      ${holdBtnHtml}
     </div>`;
   return card;
 }
@@ -1535,7 +1562,7 @@ let toastT;
 const REG_SITE_LABEL='pb71.org';
 let POST_SCOPE='all';
 function waClean(t){ return String(t==null?'':t).replace(/[*_~`]/g,'').replace(/\s+/g,' ').trim(); }
-function waTime(t){ return String(t||'').replace(/\s*([ap])\.?m\.?/i,' $1m').replace(/\s+/g,' ').trim().toLowerCase(); }
+function waTime(t){ return String(t||'').replace(/\s*([ap])\.?m\.?/i,' $1m').replace(/\b(\d{1,2}):00\b/g,'$1').replace(/\s+/g,' ').trim().toLowerCase(); }
 function waDay(c){ return (dayAbbrev(c.dayName)+' '+String(c.date||'').replace(/\s+\d{4}$/,'')).trim(); }
 function waCatName(c){ return String(c.label||'').replace(/\s+-\s+/,' · '); }
 function waLockText(c){
@@ -1545,6 +1572,7 @@ function waLockText(c){
   return t;
 }
 function waIsClosed(c){
+  if(c.paused) return 'hold';
   if(DASH && DASH.registrationOpen===false) return 'paused';
   if(c.lockAt){ const d=new Date(c.lockAt); if(!isNaN(d) && Date.now()>=d.getTime()) return 'closed'; }
   return '';
@@ -1561,7 +1589,7 @@ function waEntries(c){
 }
 function waSpots(c){
   const left=Math.max(0,(c.limit||0)-(c.filled||0));
-  if(left===0) return '*FULL* ('+c.filled+'/'+c.limit+')';
+  if(left===0) return c.filled+' of '+c.limit+' spots filled';
   const hot = left<=3 ? ' — *'+left+' left!*' : ' — '+left+' left';
   return c.filled+' of '+c.limit+' spots filled'+hot;
 }
@@ -1580,8 +1608,8 @@ function buildCategoryMessage(key,showNames,showLink){
   if(showLink){
     L.push('');
     if(closed==='paused') L.push('Registration is paused for now.');
+    else if(closed==='hold') L.push('This event is on hold this week.');
     else if(closed==='closed') L.push('Registration for this event has closed.');
-    else if(full) L.push('This one is full. Check '+REG_SITE_LABEL+' for other events.');
     else { const lt=waLockText(c); L.push('Register: '+REG_SITE_LABEL+(lt?' (closes '+lt+')':'')); }
   }
   return L.join('\n');
@@ -1593,6 +1621,7 @@ function buildDigestMessage(showNames,showLink){
   let lastDay=null;
   keys.forEach(key=>{
     const c=DASH.categories[key];
+    if(c.paused) return;
     if(c.day!==lastDay){ L.push(''); L.push('📅 *'+waDay(c)+'*'); lastDay=c.day; }
     const full=(c.limit||0)>0 && (c.filled||0)>=c.limit;
     const left=Math.max(0,(c.limit||0)-(c.filled||0));
@@ -1650,6 +1679,75 @@ function openPostWhatsApp(){
   const url='https://wa.me/?text='+encodeURIComponent(text);
   if(url.length>6000){ toast('Message is long. Use Copy and paste it into WhatsApp'); return; }
   window.open(url,'_blank','noopener');
+}
+
+
+/* ======================== Event / week hold ======================== */
+function isEditableWeekClient(){ return DASH && (DASH.week===DASH.currentWeek || DASH.week===DASH.registrationWeek); }
+function canHold(c){
+  if(!isEditableWeekClient()) return false;
+  if(c.drawCommitted && !c.paused) return false;       // a draw exists: cannot pause
+  if(c.carried) return false;                           // already moved to next week
+  if(c.startAt && Date.now()>=new Date(c.startAt).getTime()) return false; // already started
+  return true;
+}
+function holdStartText(c){
+  if(!c.startAt) return 'its start time';
+  const d=new Date(c.startAt);
+  try{ return d.toLocaleString('en-GB',{timeZone:'Asia/Colombo',weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\b(am|pm)\b/i,m=>m.toLowerCase()); }
+  catch(e){ return d.toString(); }
+}
+function holdBannerHtml(c){
+  if(c.carried){
+    const n=c.carried.count||0, to=weekLabelFor(c.carried.to||(DASH.week+1));
+    if(c.carried.status==='no_target') return '<div class="hold-banner">This event was on hold and is not scheduled in '+esc2(to)+', so '+'its players were NOT moved. Please sort them out by hand.</div>';
+    return '<div class="hold-banner done">This event was on hold. '+n+' registered '+(n===1?'entry was':'entries were')+' moved to '+esc2(to)+(c.carried.addedSlots?' ('+c.carried.addedSlots+' extra slot'+(c.carried.addedSlots===1?'':'s')+' added)':'')+'.</div>';
+  }
+  if(!c.paused) return '';
+  return '<div class="hold-banner"><b>ON HOLD.</b> Hidden from Website 1 and closed to new sign ups. If it is still on hold at '+esc2(holdStartText(c))+', the '+c.filled+' registered '+(c.filled===1?'entry moves':'entries move')+' to '+esc2(weekLabelFor(DASH.week+1))+'. Resume the event before then to keep it.</div>';
+}
+function esc2(t){ return String(t==null?'':t).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+function updateHoldWeekBtn(){
+  const b=document.getElementById('holdWeekBtn'); if(!b||!DASH) return;
+  const editable=isEditableWeekClient();
+  b.disabled=!editable;
+  b.className='hold-btn'+(DASH.weekPaused?' is-held':'');
+  b.textContent=DASH.weekPaused?'Resume week':'Pause week';
+  b.title=editable?'Hide every event of this week from Website 1':'Only the current week and the early-open week can be put on hold';
+}
+async function postHold(week,category,paused){
+  const res=await fetch(BACKEND_URL,{method:'POST',body:JSON.stringify({action:'setEventPaused',week:week,category:category,paused:paused})});
+  return res.json();
+}
+async function toggleEventHold(key){
+  const c=DASH.categories[key]; if(!c) return;
+  const pausing=!c.paused, next=weekLabelFor(DASH.week+1);
+  const msg = pausing
+    ? 'Put '+c.label+' on hold?\n\nIt disappears from Website 1 and stops taking sign ups.'+(c.filled?'\n\n'+c.filled+' player entr'+(c.filled===1?'y is':'ies are')+' already registered. If it is still on hold at '+holdStartText(c)+', they move to '+next+' automatically (top of the list, payments kept).':'')
+    : 'Resume '+c.label+'?\n\nIt returns to Website 1 straight away and the registered players stay where they are.';
+  if(!confirm(msg)) return;
+  try{
+    const out=await postHold(DASH.week,key,pausing);
+    if(out.ok){ toast(pausing?(c.label+' is on hold'):(c.label+' is back on Website 1')); await loadDashboard(); }
+    else toast(out.error||'Could not update');
+  }catch(e){ toast('Network error'); }
+}
+async function toggleWeekHold(){
+  if(!DASH) return;
+  const pausing=!DASH.weekPaused, label=weekLabelFor(DASH.week), next=weekLabelFor(DASH.week+1);
+  const total=Object.keys(DASH.categories).reduce((a,k)=>a+(DASH.categories[k].filled||0),0);
+  const msg = pausing
+    ? 'Put the whole of '+label+' on hold?\n\nEvery event disappears from Website 1, which shows the "HIVE isn\'t buzzing" message instead.'+(total?'\n\n'+total+' player entr'+(total===1?'y is':'ies are')+' already registered. Any event still on hold at its start time moves its players to '+next+' automatically.':'')
+    : 'Resume every event of '+label+'?\n\nThey all return to Website 1 straight away.';
+  if(!confirm(msg)) return;
+  try{
+    const out=await postHold(DASH.week,'ALL',pausing);
+    if(out.ok){
+      let t=pausing?(label+' is on hold'):(label+' is back on Website 1');
+      if(out.skipped&&out.skipped.length) t+=' ('+out.skipped.length+' event'+(out.skipped.length===1?'':'s')+' skipped: '+out.skipped[0].reason+')';
+      toast(t); await loadDashboard();
+    }else toast(out.error||'Could not update');
+  }catch(e){ toast('Network error'); }
 }
 
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
