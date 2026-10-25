@@ -1567,7 +1567,10 @@ let toastT;
 /* ======================== Post update (WhatsApp) ======================== */
 const REG_SITE_LABEL='pb71.org';
 let POST_SCOPE='all';
-function waClean(t){ return String(t==null?'':t).replace(/[*_~`]/g,'').replace(/\s+/g,' ').trim(); }
+function waClean(t){
+  // sheet stores names as "Name - M" / "Name - F"; the gender tag never goes into a message
+  return String(t==null?'':t).replace(/[*_~`]/g,'').replace(/\s+/g,' ').trim().replace(/\s*-\s*[MFmf]$/,'').trim();
+}
 function waTime(t){ return String(t||'').replace(/\s*([ap])\.?m\.?/i,' $1m').replace(/\b(\d{1,2}):00\b/g,'$1').replace(/\s+/g,' ').trim().toLowerCase(); }
 function waDay(c){ return (dayAbbrev(c.dayName)+' '+String(c.date||'').replace(/\s+\d{4}$/,'')).trim(); }
 function waCatName(c){ return String(c.label||'').replace(/\s+-\s+/,' · '); }
