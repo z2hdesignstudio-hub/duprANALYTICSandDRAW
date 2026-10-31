@@ -258,6 +258,7 @@ a.sliplink.none{color:var(--muted);box-shadow:none;background:none;cursor:defaul
 .card2[data-accent=pink] .bar2{background:var(--pink);}
 .card2[data-accent=cyan] .bar2{background:var(--cyan);}
 .card2[data-accent=orange] .bar2{background:var(--orange);}
+.card2[data-accent=purple] .bar2{background:#7f00ff;}
 .card2-title{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.2rem;margin:6px 0 8px;}
 .card2-meta{font-size:.9rem;color:var(--muted);font-weight:600;line-height:1.5;}
 .card2-meta b{color:var(--ink);}
@@ -474,6 +475,7 @@ const _debounce = {};
    backend — see getEffectiveSchedule in Code.gs) ---- */
 function dayAbbrev(dayName){ return dayName ? (dayName.charAt(0).toUpperCase()+dayName.slice(1,3)) : ''; }
 function ruleText(c){
+  if(c.femaleOnly) return 'Women only · all DUPR levels';
   if(c.tierMin!=null && c.tierMax!=null)
     return 'DUPR '+Number(c.tierMin).toFixed(3)+(c.tierStrictMax?' to below ':' to ')+Number(c.tierMax).toFixed(3);
   if(c.tierMax!=null && c.tierMin==null)
